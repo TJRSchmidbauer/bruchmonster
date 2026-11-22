@@ -120,7 +120,7 @@ test('importProfile meldet beschaedigt bei falschen Typen', () => {
 
 test('importProfile nimmt Profil-Id nicht aus der Datei und speichert nicht', () => {
   const store = createStore(fakeBackend());
-  const p = store.createProfile('Mia');
+  const { profile: p } = store.createProfile('Mia');
   const res = importProfile(exportProfile(p), fixedIds());
   assert.equal(res.ok, true);
   assert.notEqual(res.profile.id, p.id);
@@ -131,7 +131,8 @@ test('Store: anlegen, speichern, laden, listen, entfernen', () => {
   const backend = fakeBackend();
   const store = createStore(backend, { makeId: fixedIds() });
   assert.equal(store.persistent, true);
-  const p = store.createProfile('  Leo  ');
+  const { profile: p, saved } = store.createProfile('  Leo  ');
+  assert.deepEqual(saved, { ok: true });
   assert.equal(p.name, 'Leo');
   assert.deepEqual(store.listProfiles(), [{ id: p.id, name: 'Leo' }]);
   assert.deepEqual(store.load(p.id), p);
@@ -149,7 +150,7 @@ test('Store: anlegen, speichern, laden, listen, entfernen', () => {
 test('Store nutzt die Schluessel bruchmonster:profiles und bruchmonster:profile:<id>', () => {
   const backend = fakeBackend();
   const store = createStore(backend, { makeId: fixedIds() });
-  const p = store.createProfile('Mia');
+  const { profile: p } = store.createProfile('Mia');
   assert.ok(backend.raw.has('bruchmonster:profiles'));
   assert.ok(backend.raw.has(`bruchmonster:profile:${p.id}`));
 });
@@ -157,7 +158,7 @@ test('Store nutzt die Schluessel bruchmonster:profiles und bruchmonster:profile:
 test('Store: Schreibfehler liefert voll, App bleibt benutzbar', () => {
   const backend = fakeBackend();
   const store = createStore(backend, { makeId: fixedIds() });
-  const p = store.createProfile('Mia');
+  const { profile: p } = store.createProfile('Mia');
   backend.failWrite = true;
   p.coins = 99;
   assert.deepEqual(store.save(p), { ok: false, reason: 'voll' });
@@ -171,7 +172,7 @@ test('Store: Schreibfehler liefert voll, App bleibt benutzbar', () => {
 test('Store: Backend wirft beim Zugriff, persistent ist false und Speichern klappt im Speicher', () => {
   const store = createStore(brokenBackend, { makeId: fixedIds() });
   assert.equal(store.persistent, false);
-  const p = store.createProfile('Mia');
+  const { profile: p } = store.createProfile('Mia');
   assert.deepEqual(store.save(p), { ok: true });
   assert.equal(store.load(p.id).name, 'Mia');
   assert.deepEqual(store.listProfiles(), [{ id: p.id, name: 'Mia' }]);
@@ -186,7 +187,7 @@ test('Store ohne Backend und ohne localStorage faellt auf Speicher zurueck', () 
   try {
     const store = createStore(undefined, { makeId: fixedIds() });
     assert.equal(store.persistent, false);
-    const p = store.createProfile('Mia');
+    const { profile: p } = store.createProfile('Mia');
     assert.deepEqual(store.save(p), { ok: true });
     assert.equal(store.load(p.id).name, 'Mia');
   } finally {
@@ -203,4 +204,85 @@ test('Store: kaputter Index ergibt leere Liste, kaputtes Profil ergibt null', ()
   assert.deepEqual(store.listProfiles(), []);
   assert.equal(store.load('xyz'), null);
   assert.equal(store.load('gibtsnicht'), null);
+});
+
+// Backend, dessen Lesen geht, dessen Schreiben aber immer wirft (z.B. vollstaendiger localStorage).
+function fullBackend(seed) {
+  const data = new Map(Object.entries(seed));
+  return {
+    getItem: (k) => (data.has(k) ? data.get(k) : null),
+    setItem() { throw new Error('QuotaExceededError'); },
+    removeItem() { throw new Error('QuotaExceededError'); },
+  };
+}
+
+// Backend, das nur auf einen bestimmten Schluessel beim Schreiben wirft.
+function throwOnKey(key) {
+  const data = new Map();
+  return {
+    raw: data,
+    getItem: (k) => (data.has(k) ? data.get(k) : null),
+    setItem(k, v) {
+      if (k === key) throw new Error('QuotaExceededError');
+      data.set(k, String(v));
+    },
+    removeItem: (k) => { data.delete(k); },
+  };
+}
+
+test('Store bei vollem Speicher: Lesen geht, persistent bleibt true, Speichern meldet voll', () => {
+  const p1 = defaultProfile('Alt', 'a1');
+  const backend = fullBackend({
+    'bruchmonster:profiles': JSON.stringify([{ id: 'a1', name: 'Alt' }]),
+    'bruchmonster:profile:a1': JSON.stringify(p1),
+  });
+  const store = createStore(backend, { makeId: fixedIds() });
+  assert.equal(store.persistent, true);
+  assert.deepEqual(store.listProfiles(), [{ id: 'a1', name: 'Alt' }]);
+  assert.equal(store.load('a1').name, 'Alt');
+  assert.deepEqual(store.save(p1), { ok: false, reason: 'voll' });
+});
+
+test('createProfile liefert Profil und Speicherergebnis, auch bei Fehler', () => {
+  const backend = fakeBackend();
+  const store = createStore(backend, { makeId: fixedIds() });
+  backend.failWrite = true;
+  const res = store.createProfile('Mia');
+  assert.equal(res.profile.name, 'Mia');
+  assert.deepEqual(res.saved, { ok: false, reason: 'voll' });
+  assert.deepEqual(store.listProfiles(), []);
+});
+
+test('save: Indexschreiben schlaegt fehl, dann fehlt das Profil im Index und in der Ablage', () => {
+  const backend = throwOnKey('bruchmonster:profiles');
+  const store = createStore(backend, { makeId: fixedIds() });
+  const p = defaultProfile('Neu', 'n1');
+  assert.deepEqual(store.save(p), { ok: false, reason: 'voll' });
+  assert.deepEqual(store.listProfiles(), []);
+  assert.equal(store.load('n1'), null);
+});
+
+test('save: Profilschreiben schlaegt nach dem Index fehl, Index wird zurueckgerollt', () => {
+  const backend = throwOnKey('bruchmonster:profile:n1');
+  const store = createStore(backend, { makeId: fixedIds() });
+  const before = store.listProfiles();
+  const p = defaultProfile('Neu', 'n1');
+  assert.deepEqual(store.save(p), { ok: false, reason: 'voll' });
+  assert.deepEqual(store.listProfiles(), before);
+  assert.equal(store.load('n1'), null);
+});
+
+test('save ersetzt bestehenden Eintrag an Ort und Stelle und normalisiert den Namen', () => {
+  const store = createStore(fakeBackend(), { makeId: fixedIds() });
+  const a = store.createProfile('Eins').profile;
+  const b = store.createProfile('Zwei').profile;
+  const c = store.createProfile('Drei').profile;
+  a.name = '  Umbenannt  ';
+  assert.deepEqual(store.save(a), { ok: true });
+  assert.deepEqual(store.listProfiles(), [
+    { id: a.id, name: 'Umbenannt' },
+    { id: b.id, name: 'Zwei' },
+    { id: c.id, name: 'Drei' },
+  ]);
+  assert.equal(store.load(a.id).name, 'Umbenannt');
 });

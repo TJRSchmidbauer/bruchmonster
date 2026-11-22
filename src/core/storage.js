@@ -4,7 +4,6 @@
 const INDEX_KEY = 'bruchmonster:profiles';
 const profileKey = (id) => `bruchmonster:profile:${id}`;
 const DEFAULT_NAME = 'Monsterfreund';
-const PROBE_KEY = '__bruchmonster_probe__';
 
 export function newId() {
   return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -109,13 +108,13 @@ function memoryBackend() {
   };
 }
 
-// Backend pruefen: Schreibprobe. Wirft der Zugriff oder fehlt er, faellt der Store auf den Speicher zurueck.
+// Backend pruefen, nur lesend: Geht das Lesen, bleibt das echte Backend (auch wenn es voll ist).
+// Wirft schon das Lesen oder fehlt das Backend, faellt der Store auf den Speicher zurueck.
 function resolveBackend(backend) {
   try {
     const target = backend === undefined ? globalThis.localStorage : backend;
     if (!target) throw new Error('kein Speicher');
-    target.setItem(PROBE_KEY, '1');
-    target.removeItem(PROBE_KEY);
+    target.getItem(INDEX_KEY);
     return { be: target, persistent: true };
   } catch {
     return { be: memoryBackend(), persistent: false };
@@ -151,28 +150,50 @@ export function createStore(backend, { makeId = newId, now = () => new Date().to
     }
   }
 
+  // Index zuerst, dann Profil. Schlaegt das Profil fehl, wird der alte Index zurueckgeschrieben,
+  // so dass der Index nie ein gespeichertes Profil auslaesst.
   function save(p) {
+    const stored = { ...p, name: normalizeName(p.name) };
+    let prevIndex = null;
     try {
-      be.setItem(profileKey(p.id), JSON.stringify(p));
-      const list = readIndex().filter((e) => e.id !== p.id);
-      list.push({ id: p.id, name: p.name });
+      prevIndex = be.getItem(INDEX_KEY);
+    } catch {
+      return { ok: false, reason: 'voll' };
+    }
+    const list = readIndex();
+    const i = list.findIndex((e) => e.id === stored.id);
+    const entry = { id: stored.id, name: stored.name };
+    if (i >= 0) list[i] = entry;
+    else list.push(entry);
+    try {
       be.setItem(INDEX_KEY, JSON.stringify(list));
+    } catch {
+      return { ok: false, reason: 'voll' };
+    }
+    try {
+      be.setItem(profileKey(stored.id), JSON.stringify(stored));
       return { ok: true };
     } catch {
+      try {
+        if (prevIndex == null) be.removeItem(INDEX_KEY);
+        else be.setItem(INDEX_KEY, prevIndex);
+      } catch {
+        // Zurueckschreiben schlaegt fehl; der Index bleibt wie er ist.
+      }
       return { ok: false, reason: 'voll' };
     }
   }
 
   function createProfile(name) {
-    const p = defaultProfile(name, makeId(), now());
-    save(p);
-    return p;
+    const profile = defaultProfile(name, makeId(), now());
+    const saved = save(profile);
+    return { profile, saved };
   }
 
   function remove(id) {
     try {
-      be.removeItem(profileKey(id));
       be.setItem(INDEX_KEY, JSON.stringify(readIndex().filter((e) => e.id !== id)));
+      be.removeItem(profileKey(id));
     } catch {
       // Entfernen schlaegt still fehl; die App bleibt benutzbar.
     }
