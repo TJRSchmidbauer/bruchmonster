@@ -39,6 +39,8 @@ export async function build() {
   mkdirSync(join(root, 'dist'), { recursive: true });
   const out = join(root, 'dist/bruchmonster.html');
   writeFileSync(out, html);
+  // Dieselbe Datei als index.html im Hauptverzeichnis: damit GitHub Pages die App direkt ausliefert.
+  writeFileSync(join(root, 'index.html'), html);
   return out;
 }
 

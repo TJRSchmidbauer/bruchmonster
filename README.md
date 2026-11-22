@@ -4,7 +4,9 @@ Eine Lern-App zur Bruchrechnung für die 6. Klasse (Gymnasium und Realschule). K
 
 Die App besteht aus **einer einzigen HTML-Datei**. Sie läuft komplett im Browser, braucht kein Internet, kein Konto und keinen Server. Es werden keine Daten übertragen, und Schriften oder Skripte kommen nicht von fremden Servern.
 
-**[Zur Datei `dist/bruchmonster.html`](dist/bruchmonster.html)** (auf „Raw“ klicken, speichern, per Doppelklick öffnen)
+**Direkt im Browser ausprobieren: [tjrschmidbauer.github.io/bruchmonster](https://tjrschmidbauer.github.io/bruchmonster/)**
+
+Oder als Datei: [`dist/bruchmonster.html`](dist/bruchmonster.html) (auf „Raw“ klicken, speichern, per Doppelklick öffnen).
 
 ## Worum es didaktisch geht
 
@@ -25,8 +27,10 @@ Stoff: Bruchbegriff, Darstellen, Vergleichen, Erweitern und Kürzen, Addieren un
 
 ## Benutzung
 
-1. `dist/bruchmonster.html` herunterladen und im Browser öffnen. Getestet ist die App mit Chrome; andere aktuelle Browser sollten funktionieren, sind aber nicht geprüft. Maus, Touch und Tastatur sind vorgesehen.
+1. Die Seite oben öffnen oder `dist/bruchmonster.html` herunterladen und im Browser öffnen. Getestet ist die App mit Chrome; andere aktuelle Browser sollten funktionieren, sind aber nicht geprüft. Maus, Touch und Tastatur sind vorgesehen.
 2. Namen eingeben, Monster bekommen, Welt wählen.
+
+**Datenschutz:** Das Spiel selbst sendet nichts. Beim Aufruf über GitHub Pages sieht allerdings GitHub, wie bei jeder Webseite, die Zugriffe (siehe [Datenschutz auf schmidbauer.io](https://schmidbauer.io/datenschutz/)). Wer das vermeiden will, nimmt die heruntergeladene Datei, die auch ohne Internet läuft. Der Spielstand bleibt in beiden Fällen nur im eigenen Browser.
 
 **Wichtig:** Zum Spielen die Datei herunterladen und im normalen Browser-Fenster öffnen. In Vorschau-Fenstern (etwa in Chat-Programmen oder E-Mail-Vorschauen) kann der Browser das Speichern sperren, dann ist der Spielstand beim Schließen weg.
 
