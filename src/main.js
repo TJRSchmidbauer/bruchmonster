@@ -1,5 +1,7 @@
 import { createStore } from './core/storage.js';
 import { makeRng } from './core/rng.js';
+import { createUnsaved } from './core/unsaved.js';
+import { downloadProfile } from './ui/download.js';
 import { h, button } from './ui/dom.js';
 import { startRouter, registerScreen, go } from './ui/router.js';
 import { renderProfile } from './ui/screens/profile.js';
@@ -31,9 +33,14 @@ const header = h('header', { class: 'topbar', hidden: true },
   h('div', { class: 'topbar__stats' }, streakEl, coinsEl));
 const toastEl = h('div', { class: 'toast', role: 'status', hidden: true });
 let toastTimer = null;
+const unsaved = createUnsaved();
+const saveBanner = h('div', { class: 'savebanner', role: 'alert', hidden: true },
+  h('p', null, 'Speichern klappt gerade nicht – sichere deinen Spielstand als Datei.'),
+  button('Spielstand sichern', { variant: 'primary', onClick: () => { const p = unsaved.get(); if (p) downloadProfile(p); } }));
 
 const app = {
   store,
+  unsaved,
   profile: null,
   rng: makeRng(Date.now()),
   today() {
@@ -44,8 +51,17 @@ const app = {
     app.profile = p;
     app.updateHeader();
     const res = store.save(p);
-    if (!res.ok) app.toast('Speichern hat nicht geklappt. Exportiere den Spielstand, damit nichts verloren geht.');
+    app.noteSave(p, res);
     return res;
+  },
+  // Merkt Speicherfehler; das Banner bleibt, bis das Speichern wieder klappt.
+  noteSave(p, res) {
+    unsaved.note(p, res);
+    saveBanner.hidden = unsaved.get() === null;
+  },
+  // Export des aktiven Profils aus dem Arbeitsspeicher (immer der aktuelle Stand).
+  exportProfile() {
+    if (app.profile) downloadProfile(app.profile);
   },
   openProfile(p) {
     app.profile = p;
@@ -81,7 +97,7 @@ const app = {
 };
 
 const main = h('main', { id: 'screen', class: 'main' });
-document.getElementById('app').append(header, main, toastEl);
+document.getElementById('app').append(header, saveBanner, main, toastEl);
 startRouter(main, app);
 registerScreen('profile', (root, params, a) => {
   a.profile = null;

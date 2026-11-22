@@ -48,5 +48,6 @@ export function renderHub(root, _params, app) {
       h('section', { class: 'hub__worlds', 'aria-label': 'Welten' },
         h('h2', { class: 'section-title' }, 'Wohin heute?'),
         h('ul', { class: 'tiles' }, tiles),
-        button('Zum Monster', { variant: 'secondary', onClick: () => go('monster') }))));
+        button('Zum Monster', { variant: 'secondary', onClick: () => go('monster') }),
+        button('Spielstand sichern', { variant: 'ghost', 'data-act': 'export', onClick: () => app.exportProfile?.() }))));
 }

@@ -186,6 +186,16 @@ h1:focus { outline: none; box-shadow: none; }
 }
 .coins--small { min-height: 0; font-size: var(--fs-m); padding: 0 var(--sp-3); box-shadow: none; }
 
+.savebanner {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3);
+  background: var(--lemon); color: var(--ink);
+  border-bottom: var(--line) solid var(--ink);
+  padding: var(--sp-3) var(--sp-4);
+  font-weight: 700;
+}
+.savebanner[hidden] { display: none; }
+.savebanner p { margin: 0; flex: 1 1 16rem; }
+
 .toast {
   position: fixed;
   left: var(--sp-4); right: var(--sp-4); bottom: var(--sp-4);

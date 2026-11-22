@@ -1,6 +1,7 @@
 // Profil-Bildschirm: waehlen, anlegen, importieren, exportieren, loeschen (mit Rueckfrage im UI).
 import { h, button, announce } from '../dom.js';
-import { exportProfile, importProfile } from '../../core/storage.js';
+import { importProfile } from '../../core/storage.js';
+import { downloadProfile } from '../download.js';
 import { monsterColor } from '../monster/preview.js';
 
 const IMPORT_FEHLER = {
@@ -10,23 +11,13 @@ const IMPORT_FEHLER = {
   beschaedigt: 'Die Datei ist beschädigt.',
 };
 
-function download(profile) {
-  const safe = profile.name.replace(/[^\p{L}\p{N}_-]+/gu, '_') || 'monster';
-  const url = URL.createObjectURL(new Blob([exportProfile(profile)], { type: 'application/json' }));
-  const a = h('a', { href: url, download: `bruchmonster-${safe}.json` });
-  document.body.append(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
 export function renderProfile(root, _params, app) {
   const { store } = app;
   let confirming = null; // id des Profils, dessen Loeschen gerade nachgefragt wird
   let message = '';
 
   function open(id) {
-    const p = store.load(id);
+    const p = app.unsaved?.pendingFor(id) ?? store.load(id);
     if (!p) {
       message = 'Dieser Spielstand lässt sich nicht lesen.';
       draw('#meldung');
@@ -45,7 +36,7 @@ export function renderProfile(root, _params, app) {
     ev.preventDefault();
     const input = root.querySelector('#neuer-name');
     const { profile, saved } = store.createProfile(input.value);
-    if (!saved.ok) app.toast('Speichern hat nicht geklappt. Exportiere den Spielstand, damit nichts verloren geht.');
+    app.noteSave?.(profile, saved);
     app.openProfile(profile);
   }
 
@@ -57,8 +48,8 @@ export function renderProfile(root, _params, app) {
       const res = importProfile(String(reader.result));
       if (!res.ok) return say(IMPORT_FEHLER[res.reason] ?? IMPORT_FEHLER.beschaedigt);
       const saved = store.save(res.profile);
-      if (!saved.ok) app.toast('Speichern hat nicht geklappt. Exportiere den Spielstand, damit nichts verloren geht.');
-      else app.toast(`Spielstand von ${res.profile.name} ist da.`);
+      app.noteSave?.(res.profile, saved);
+      if (saved.ok) app.toast(`Spielstand von ${res.profile.name} ist da.`);
       app.openProfile(res.profile);
     };
     reader.onerror = () => say(IMPORT_FEHLER.beschaedigt);
@@ -66,7 +57,7 @@ export function renderProfile(root, _params, app) {
   }
 
   function row(entry) {
-    const p = store.load(entry.id);
+    const p = app.unsaved?.pendingFor(entry.id) ?? store.load(entry.id);
     const asking = confirming === entry.id;
     return h('li', { class: 'card profile-row' },
       h('div', { class: 'profile-row__info' },
@@ -86,7 +77,7 @@ export function renderProfile(root, _params, app) {
             button('Doch nicht', { variant: 'ghost', 'data-act': 'cancel', 'aria-describedby': 'rueckfrage', onClick: () => { confirming = null; draw(`[data-del="${entry.id}"]`); } }))
         : h('div', { class: 'profile-row__actions' },
             button('Spielen', { variant: 'primary', onClick: () => open(entry.id), 'aria-label': `${entry.name} spielen` }),
-            button('Exportieren', { variant: 'ghost', onClick: () => p && download(p), 'aria-label': `${entry.name} exportieren` }),
+            button('Exportieren', { variant: 'ghost', onClick: () => p && downloadProfile(p), 'aria-label': `${entry.name} exportieren` }),
             button('Löschen', { variant: 'ghost', 'data-del': entry.id, onClick: () => { confirming = entry.id; draw('[data-act="cancel"]'); }, 'aria-label': `${entry.name} löschen` })));
   }
 

@@ -187,7 +187,8 @@ export function renderMonster(root, params, app) {
     h('div', { class: 'monster__head' },
       button('Zurück', { variant: 'ghost', onClick: () => go('hub') }),
       h('h1', { class: 'title' }, 'Mein Monster')),
-    tablist, panel));
+    tablist, panel,
+    button('Spielstand sichern', { variant: 'ghost', 'data-act': 'export', onClick: () => app.exportProfile?.() })));
   ctx.rerender();
 
   return () => {

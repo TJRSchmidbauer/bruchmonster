@@ -4,7 +4,7 @@ import { parseHTML } from 'linkedom';
 
 let win, doc;
 let monsterSvg, STAGE_NAMES, CLOTHES, FURNITURE, FOOD, itemArt, hasArt, caveSvg, moveFurniture, SLOTS;
-let renderMonster, ITEMS, monsterStage, touchStreak, defaultProfile, makeRng;
+let renderHub, renderMonster, ITEMS, monsterStage, touchStreak, defaultProfile, makeRng;
 
 before(async () => {
   const parsed = parseHTML('<!doctype html><html><body><div id="app"></div></body></html>');
@@ -19,6 +19,7 @@ before(async () => {
   ({ itemArt, hasArt } = await import('../src/ui/monster/thumbs.js'));
   ({ caveSvg, moveFurniture, SLOTS } = await import('../src/ui/monster/cave.js'));
   ({ renderMonster } = await import('../src/ui/screens/monster.js'));
+  ({ renderHub } = await import('../src/ui/screens/hub.js'));
   ({ ITEMS, monsterStage, touchStreak } = await import('../src/core/economy.js'));
   ({ defaultProfile } = await import('../src/core/storage.js'));
   ({ makeRng } = await import('../src/core/rng.js'));
@@ -362,4 +363,29 @@ test('Bewegung: bei reduzierter Bewegung keine Hop-Animation', () => {
     if (had) Object.defineProperty(proto, 'animate', had); else delete proto.animate;
     delete win.matchMedia;
   }
+});
+
+test('Monster-Bereich: "Spielstand sichern" exportiert das aktuelle Profil ueber app.exportProfile', () => {
+  const { app, root, cleanup } = open(profile());
+  let n = 0;
+  app.exportProfile = () => { n += 1; };
+  const btn = root.querySelector('[data-act="export"]');
+  assert.ok(btn);
+  assert.match(btn.textContent, /Spielstand sichern/);
+  click(btn);
+  assert.equal(n, 1);
+  cleanup();
+});
+
+test('Hub: "Spielstand sichern" ruft app.exportProfile auf', () => {
+  const app = fakeApp(profile());
+  let n = 0;
+  app.exportProfile = () => { n += 1; };
+  const root = doc.createElement('div');
+  doc.body.append(root);
+  renderHub(root, {}, app);
+  const btn = root.querySelector('[data-act="export"]');
+  assert.ok(btn);
+  click(btn);
+  assert.equal(n, 1);
 });
