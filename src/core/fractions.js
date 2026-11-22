@@ -103,22 +103,27 @@ export function parseAnswer(text) {
   if (t === '') return { ok: false, reason: 'leer' };
   if (t.includes('-')) return { ok: false, reason: 'negativ' };
 
+  const safe = (...xs) => xs.every(Number.isSafeInteger);
   let m;
   if ((m = RE_MIXED.exec(t))) {
     const whole = Number(m[1]);
     const n = Number(m[2]);
     const d = Number(m[3]);
+    if (!safe(whole, n, d) || !safe(whole * d + n)) return { ok: false, reason: 'format' };
     if (d === 0) return { ok: false, reason: 'nenner-null' };
     return { ok: true, value: fromMixed(whole, n, d) };
   }
   if ((m = RE_FRAC.exec(t))) {
     const n = Number(m[1]);
     const d = Number(m[2]);
+    if (!safe(n, d)) return { ok: false, reason: 'format' };
     if (d === 0) return { ok: false, reason: 'nenner-null' };
     return { ok: true, value: frac(n, d) };
   }
   if (RE_INT.test(t)) {
-    return { ok: true, value: frac(Number(t), 1) };
+    const n = Number(t);
+    if (!safe(n)) return { ok: false, reason: 'format' };
+    return { ok: true, value: frac(n, 1) };
   }
   return { ok: false, reason: 'format' };
 }

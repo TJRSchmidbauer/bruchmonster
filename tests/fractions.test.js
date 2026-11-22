@@ -84,3 +84,12 @@ test('parseAnswer: Fehlergründe', () => {
   assert.deepEqual(parseAnswer('abc'), { ok: false, reason: 'format' });
   assert.deepEqual(parseAnswer('0,75'), { ok: false, reason: 'format' });
 });
+
+test('parseAnswer: sehr lange Ziffernfolgen werfen nicht', () => {
+  const big = '9'.repeat(40);
+  assert.deepEqual(parseAnswer(big), { ok: false, reason: 'format' });
+  assert.deepEqual(parseAnswer(`1/${big}`), { ok: false, reason: 'format' });
+  assert.deepEqual(parseAnswer(`${big}/3`), { ok: false, reason: 'format' });
+  assert.deepEqual(parseAnswer(`${big} 1/2`), { ok: false, reason: 'format' });
+  assert.deepEqual(parseAnswer('9007199254740991 1/9007199254740991'), { ok: false, reason: 'format' });
+});
