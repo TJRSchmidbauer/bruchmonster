@@ -257,3 +257,17 @@ test('schaetzen: Tipp 3 hat verschiedene, gekuerzte Endpunkte oder "genau bei"',
     }
   }
 });
+
+test('anteil-von-groesse: Euro nur bei ganzzahligem Ergebnis', () => {
+  let euro = 0;
+  for (let seed = 1; seed <= 300; seed++) {
+    for (const level of [1, 2, 3]) {
+      const t = generate('anteil-von-groesse', level, makeRng(seed));
+      const v = t.answer.value;
+      const whole = v.d === 1;
+      if (!whole) assert.ok(!/Euro/.test(t.prompt), `Bruchbetrag in Euro: ${t.prompt}`);
+      if (/Euro/.test(t.prompt)) euro++;
+    }
+  }
+  assert.ok(euro > 0, 'Euro kommt bei ganzen Ergebnissen weiterhin vor');
+});

@@ -11,10 +11,13 @@ const GROESSEN = [
   { unit: 'Meter', was: 'Lakritzschnur' },
   { unit: 'Liter', was: 'Monsterlimo' },
   { unit: 'kg', was: 'Gummibärchen' },
+  { unit: 'Stunden', was: 'Spielzeit' },
+  { unit: 'km', was: 'Radweg' },
 ];
+// Euro nur, wenn das Ergebnis ganz ist; bei Bruechen passen Liter, kg, Stunden, km, Meter.
+const BRUCH_GROESSEN = GROESSEN.filter((g) => g.unit !== 'Euro');
 
 export function anteilVonGroesse(level, rng) {
-  const g = pick(rng, GROESSEN);
   let a;
   let b = null;
   let Q;
@@ -39,6 +42,7 @@ export function anteilVonGroesse(level, rng) {
   const base = frac(Q, 1);
   const part = simplify(mul(a, base));
   const value = b ? simplify(mul(simplify(sub(frac(1, 1), add(a, b))), base)) : part;
+  const g = pick(rng, value.d === 1 ? GROESSEN : BRUCH_GROESSEN);
   const q = { value: Q, unit: g.unit };
   const prompt = b
     ? `Von ${Q} ${g.unit} ${g.was} gehen ${format(a)} an Anna und ${format(b)} an Ben. Wie viel bleibt für dich?`
