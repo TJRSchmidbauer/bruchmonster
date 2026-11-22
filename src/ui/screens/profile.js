@@ -32,8 +32,9 @@ export function renderProfile(root, _params, app) {
     draw('#meldung');
   }
 
-  function create(ev) {
-    ev.preventDefault();
+  // Bewusst kein <form>: In abgeschotteten Rahmen (z.B. Vorschau im Chat, eingebettete Seiten ohne
+  // "allow-forms") blockiert der Browser jedes Formular-Absenden stillschweigend.
+  function create() {
     const input = root.querySelector('#neuer-name');
     const { profile, saved } = store.createProfile(input.value);
     app.noteSave?.(profile, saved);
@@ -93,12 +94,13 @@ export function renderProfile(root, _params, app) {
           'Dein Browser speichert gerade nichts dauerhaft. Exportiere deinen Spielstand, bevor du das Fenster schließt.'),
         message ? h('p', { id: 'meldung', tabindex: -1, class: 'notice notice--error', role: 'alert' }, message) : null,
         list.length ? h('ul', { class: 'profile-list' }, list.map(row)) : null,
-        h('form', { class: 'card create', onsubmit: create },
-          h('h2', { class: 'card__title' }, 'Neues Monster'),
+        h('div', { class: 'card create', role: 'group', 'aria-labelledby': 'neu-titel' },
+          h('h2', { class: 'card__title', id: 'neu-titel' }, 'Neues Monster'),
           h('label', { for: 'neuer-name', class: 'field__label' }, 'Dein Name'),
-          h('input', { id: 'neuer-name', class: 'field field--hint', type: 'text', maxlength: 20, autocomplete: 'off', placeholder: 'Zum Beispiel Mia', 'aria-describedby': 'name-hinweis' }),
+          h('input', { id: 'neuer-name', class: 'field field--hint', type: 'text', maxlength: 20, autocomplete: 'off', placeholder: 'Zum Beispiel Mia', 'aria-describedby': 'name-hinweis',
+            onkeydown: (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); create(); } } }),
           h('p', { id: 'name-hinweis', class: 'small field__hint' }, 'Ohne Namen heißt du Monsterfreund.'),
-          h('button', { type: 'submit', class: 'btn btn--primary' }, h('span', null, 'Los geht’s'))),
+          h('button', { type: 'button', class: 'btn btn--primary', 'data-act': 'create', onclick: create }, h('span', null, 'Los geht’s'))),
         h('div', { class: 'card import' },
           h('h2', { class: 'card__title' }, 'Spielstand mitbringen'),
           h('p', { class: 'small' }, 'Hast du einen Spielstand als Datei? Hol ihn hier zurück.'),
