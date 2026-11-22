@@ -84,6 +84,11 @@ export function createRunner({ profile, kind, level, rng, today, nowMs, onUpdate
 
       if (check.invalid) return { correct: false, invalid: check.invalid, coins: 0, capped: false, already: false };
 
+      // Richtig, nur nicht gekuerzt: kein Fehlversuch, Serie und Mastery bleiben unberuehrt.
+      if (!check.correct && check.note === 'nicht-gekuerzt') {
+        return { correct: false, note: check.note, coins: 0, capped: false, already: false };
+      }
+
       if (!check.correct) {
         t.wrongAttempts++;
         sessionStreak = 0;
