@@ -254,3 +254,21 @@ test('numberline: Pfeiltasten kommen bei Strichen wie 1/11 bis ans Ende (Rundung
     }
   }
 });
+
+test('taskview: falsche Position zeigt Richtung, aber nicht die richtige Stelle', () => {
+  const profile = defaultProfile('T', 'p1');
+  const app = { profile, rng: makeRng(1) };
+  const runner = createRunner({ profile, kind: 'platzieren', level: 1, rng: makeRng(3), today: '2026-11-22', onUpdate: () => {} });
+  const view = createTaskView({ app, runner, session: { size: 5, done: 0, coins: 0, right: 0 }, onNext: () => {}, onSkip: () => {} });
+  const t = runner.current();
+  const x = t.answer.value.n / t.answer.value.d;
+  const svg = view.el.querySelector('svg.drawing--line');
+  svg.setValue(x > 0.5 ? 0.02 : 0.98);
+  const check = [...view.el.querySelectorAll('button')].find((b) => /Prüfen/.test(b.textContent));
+  check.dispatchEvent(new win.Event('click', { bubbles: true }));
+  const sheet = document.querySelector('.sheet');
+  assert.ok(sheet, 'Sheet offen');
+  assert.match(sheet.textContent, /zu weit (links|rechts)/);
+  assert.equal(sheet.querySelector('.sheet__drawing'), null, 'keine Loesungszeichnung');
+  view.destroy();
+});

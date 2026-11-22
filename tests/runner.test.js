@@ -297,3 +297,26 @@ test('nicht-gekuerzt: Serie bleibt erhalten und Mastery zaehlt keinen Fehler', (
   assert.equal(r.state().sessionStreak, streak);
   assert.equal(last().mastery.kuerzen.wrong, 0);
 });
+
+test('Anti-Raten: position nach Fehlversuch bringt 0 Muenzen', () => {
+  for (const kind of ['platzieren', 'schaetzen']) {
+    const { r } = make(kind, 1);
+    const t = r.current();
+    assert.equal(t.answer.type, 'position');
+    const wrong = t.answer.value.n / t.answer.value.d > 0.5 ? 0.02 : 0.98;
+    assert.equal(r.submit(wrong).correct, false, kind);
+    const res = r.submit(t.answer.value.n / t.answer.value.d);
+    assert.equal(res.correct, true, kind);
+    assert.equal(res.coins, 0, kind);
+  }
+});
+
+test('Anti-Raten: Streifen faerben (darstellen) nach Fehlversuch bringt 0 Muenzen', () => {
+  const { r } = make('darstellen', 1);
+  const t = r.current();
+  assert.equal(t.widget.type, 'strips');
+  r.submit('99/1');
+  const res = r.submit(rightInput(t));
+  assert.equal(res.correct, true);
+  assert.equal(res.coins, 0);
+});

@@ -7,6 +7,16 @@ import { numberlineWidget, stripsWidget } from '../widgets/interactive.js';
 import { monsterPreview } from '../monster/preview.js';
 import { describe } from '../../tasks/errors.js';
 
+// Richtung (und grobe Naehe) fuer eine falsche Zahlenstrahl-Antwort, ohne die Loesung zu zeigen.
+export function positionFeedback(task, sent) {
+  const a = task.answer;
+  if (a.type !== 'position' || typeof sent !== 'number') return null;
+  const x = a.value.n / a.value.d;
+  const side = sent < x ? 'Etwas zu weit links' : 'Etwas zu weit rechts';
+  const near = Math.abs(sent - x) <= 2 * (a.tolerance ?? 0);
+  return near ? `${side}, aber ziemlich nah dran. Probier es noch mal.` : `${side}. Probier es noch mal.`;
+}
+
 export const SUPPORTED = new Set(['input', 'choice', 'mark', 'numberline', 'strips']);
 
 export const INVALID_TEXT = {
@@ -168,7 +178,7 @@ export function createTaskView(ctx) {
   function coinLine(res) {
     if (res.coins > 0) return `+${res.coins} ${res.coins === 1 ? 'Münze' : 'Münzen'}`;
     if (res.capped) return 'Die Münzen für diese Aufgabenart sind für heute voll. Üben lohnt sich trotzdem.';
-    return 'Diesmal keine Münzen: Nach einem Fehlversuch gibt es bei Auswahl keine. Die nächste Aufgabe klappt.';
+    return 'Diesmal keine Münzen: Nach einem Fehlversuch gibt es bei dieser Aufgabenart keine. Die nächste Aufgabe klappt.';
   }
 
   function showCorrect(res) {
@@ -194,11 +204,9 @@ export function createTaskView(ctx) {
       const drawing = safeExplain(info.counter);
       extra = drawing ? h('div', { class: 'sheet__drawing' }, drawing) : null;
     } else if (!res.note && task.answer.type === 'position') {
-      // Falsche Position: zeigen, wo der Bruch liegt, und auf welcher Seite der Punkt daneben stand.
-      const x = task.answer.value.n / task.answer.value.d;
-      if (typeof sent === 'number') text = `${sent < x ? 'Zu weit links' : 'Zu weit rechts'}. ${text}`;
-      const drawing = safeExplain(task.explain);
-      extra = drawing ? h('div', { class: 'sheet__drawing' }, drawing) : null;
+      // Falsche Position: nur die Richtung verraten, die richtige Stelle nicht zeichnen
+      // (sonst waere Nachklicken ein Muenzen-Trick). Die Zeichnung gibt es mit Tipp 2 oder bei "Lösung zeigen".
+      text = positionFeedback(task, sent) ?? text;
     }
     const buttons = [retryBtn()];
     if (runner.canReveal()) buttons.push(button('Lösung zeigen', { onClick: reveal }));

@@ -4,7 +4,9 @@ import { generate, checkAnswer } from '../tasks/generators.js';
 import { applyResult, touchStreak, cardDue, awardCard } from '../core/economy.js';
 import { format, formatMixed, frac } from '../core/fractions.js';
 
-const GUESS_TYPES = new Set(['choice', 'marks']);
+const GUESS_TYPES = new Set(['choice', 'marks', 'position']);
+// Raten lohnt sich nicht: Auswahl, Markieren, Zahlenstrahl und Streifen faerben.
+const isGuess = (task) => GUESS_TYPES.has(task.answer.type) || task.widget?.type === 'strips';
 
 // Text der richtigen Antwort fuer "Loesung zeigen".
 export function answerText(task) {
@@ -104,7 +106,7 @@ export function createRunner({ profile, kind, level, rng, today, nowMs, onUpdate
       const clean = t.wrongAttempts === 0 && t.hintsUsed === 0;
       let coins = 0;
       let capped = false;
-      if (!(GUESS_TYPES.has(task.answer.type) && t.wrongAttempts > 0)) {
+      if (!(isGuess(task) && t.wrongAttempts > 0)) {
         const r = applyResult(p, task, {
           correct: true,
           hintsUsed: t.hintsUsed + t.wrongAttempts,
