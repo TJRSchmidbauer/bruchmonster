@@ -110,7 +110,7 @@ export function numberline(opts) {
 
   function paint() {
     pin.setAttribute('transform', `translate(${X(value)} ${LINE_Y})`);
-    pin.setAttribute('aria-valuenow', String(Math.round(value * 1e4) / 1e4));
+    pin.setAttribute('aria-valuenow', String(Math.round(value * 1e6) / 1e6));
     pin.setAttribute('aria-valuetext', touched ? valueText(value, ticks) : 'noch nicht gesetzt');
     pin.classList.toggle('nl-pin--idle', !touched);
   }
