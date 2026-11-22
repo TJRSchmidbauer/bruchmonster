@@ -337,13 +337,13 @@ h1:focus { outline: none; box-shadow: none; }
 .levels { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); }
 .level {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-  min-height: 64px; padding: var(--sp-2);
+  min-height: 64px; padding: var(--sp-2) 4px;
   background: var(--paper); color: var(--ink);
   border: var(--line) solid var(--ink); border-radius: var(--r-card); box-shadow: var(--shadow);
-  font-family: var(--font-display); cursor: pointer;
+  font-family: var(--font-display); cursor: pointer; min-width: 0;
 }
 .level__n { font-weight: 900; font-size: var(--fs-l); }
-.level__name { font-size: var(--fs-s); font-weight: 700; overflow-wrap: anywhere; text-align: center; }
+.level__name { font-size: clamp(0.72rem, 3.3vw, var(--fs-s)); font-weight: 700; overflow-wrap: break-word; hyphens: auto; text-align: center; max-width: 100%; }
 .level[aria-pressed='true'] { background: var(--world); box-shadow: var(--shadow-pressed); transform: translate(2px, 2px); }
 .level:focus-visible, .kind:focus-visible, .pick:focus-visible, .keycap:focus-visible { box-shadow: var(--shadow), 0 0 0 6px var(--lemon); }
 

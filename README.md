@@ -1,5 +1,7 @@
 # Bruchmonster
 
+![Bruchmonster auf Desktop, Tablet und Handy](docs/bilder/titel.png)
+
 Eine Lern-App zur Bruchrechnung für die 6. Klasse (Gymnasium und Realschule). Kinder üben in vier frei wählbaren Welten, verdienen Münzen und ziehen damit ein Comic-Monster groß: füttern, einkleiden, eine Höhle einrichten, Sammelkarten finden.
 
 Die App besteht aus **einer einzigen HTML-Datei**. Sie läuft komplett im Browser, braucht kein Internet, kein Konto und keinen Server. Es werden keine Daten übertragen, und Schriften oder Skripte kommen nicht von fremden Servern.
@@ -7,6 +9,22 @@ Die App besteht aus **einer einzigen HTML-Datei**. Sie läuft komplett im Browse
 **Direkt im Browser ausprobieren: [tjrschmidbauer.github.io/bruchmonster](https://tjrschmidbauer.github.io/bruchmonster/)**
 
 Oder als Datei: [`dist/bruchmonster.html`](dist/bruchmonster.html) (auf „Raw“ klicken, speichern, per Doppelklick öffnen).
+
+## So sieht es aus
+
+Die App passt sich an Desktop, Tablet und Handy an. Alle Bilder sind echte Aufnahmen der gebauten Datei (erzeugt mit `scripts/screenshots.py`).
+
+| Handy | Tablet |
+|---|---|
+| ![Startseite am Handy](docs/bilder/handy-start.png) | ![Hub am Tablet](docs/bilder/tablet-hub.png) |
+| ![Hub am Handy](docs/bilder/handy-hub.png) | ![Welt am Tablet](docs/bilder/tablet-welt.png) |
+| ![Streifenaufgabe am Handy](docs/bilder/handy-aufgabe-streifen.png) | ![Zahlenstrahl am Tablet](docs/bilder/tablet-aufgabe-strahl.png) |
+| ![Monster am Handy](docs/bilder/handy-monster.png) | ![Monster am Tablet](docs/bilder/tablet-monster.png) |
+
+**Desktop**
+
+![Zahlenstrahl am Desktop](docs/bilder/desktop-aufgabe-strahl.png)
+![Monster am Desktop](docs/bilder/desktop-monster.png)
 
 ## Worum es didaktisch geht
 
@@ -63,7 +81,7 @@ Der Spielstand liegt im Speicher des Browsers. Wer den Verlauf löscht oder das 
 - Der Code benutzt kein `innerHTML`, kein `eval` und keine Laufzeit-Abhängigkeiten. Eingaben werden immer als Text gesetzt. Ein Test sucht den Quelltext nach solchen Stellen ab.
 - Importierte Spielstände werden geprüft: höchstens 200 KB, nur bekannte Feldformen, begrenzte Zahlen und Listen, bereinigte Namen.
 
-`npm test` und `python3 scripts/security-check.py` prüfen das, das zweite Skript im echten Browser, mit Angriffsversuchen. `python3 scripts/backup-check.py` prüft Sicherung, Code und Drag-and-drop im Browser.
+`npm test` und `python3 scripts/security-check.py` prüfen das, das zweite Skript im echten Browser, mit Angriffsversuchen. `python3 scripts/backup-check.py` prüft Sicherung, Code und Drag-and-drop im Browser. `python3 scripts/screenshots.py` erzeugt die Bilder für diese README neu (nach `npm run build`).
 
 **Datei prüfen.** Wer die App herunterlädt, kann nachrechnen, ob sie unverändert ist, und den Wert mit [`dist/bruchmonster.html.sha256`](dist/bruchmonster.html.sha256) vergleichen:
 
