@@ -110,9 +110,9 @@ export function rezept(level, rng) {
 }
 
 const VERTEIL = [
-  { unit: 'l', was: 'Monsterlimo', wer: 'Gläser' },
-  { unit: 'kg', was: 'Schokolade', wer: 'Kinder' },
-  { unit: 'm', was: 'Lakritzschnur', wer: 'Monster' },
+  { unit: 'l', was: 'Monsterlimo', wer: 'Gläser', je: 'jedes Glas' },
+  { unit: 'kg', was: 'Schokolade', wer: 'Kinder', je: 'jedes Kind' },
+  { unit: 'm', was: 'Lakritzschnur', wer: 'Monster', je: 'jedes Monster' },
 ];
 
 export function teilenDurchNat(level, rng) {
@@ -128,7 +128,7 @@ export function teilenDurchNat(level, rng) {
   const A = level === 3 ? formatMixed(a) : format(a);
   return makeTask(rng, {
     world: WORLD, kind: 'teilen-durch-nat', level,
-    prompt: `${A} ${v.unit} ${v.was} werden gerecht auf ${k} ${v.wer} verteilt. Wie viel bekommt jeder?`,
+    prompt: `${A} ${v.unit} ${v.was} werden gerecht auf ${k} ${v.wer} verteilt. Wie viel bekommt ${v.je}?`,
     widget: { type: 'input', data: {} },
     answer: { type: 'frac', value },
     hints: [

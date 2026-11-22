@@ -219,3 +219,26 @@ test('Detektiv: Zeilen 3-4, Index im Bereich, Optionen 3-4', () => {
     }
   }
 });
+
+function* stringsIn(o) {
+  if (typeof o === 'string') yield o;
+  else if (o && typeof o === 'object') for (const v of Object.values(o)) yield* stringsIn(v);
+}
+
+test('Texte: alle Nenner <= 60, keine Dezimalzahlen', () => {
+  for (const [, kind] of ALL) {
+    for (const level of LEVELS) {
+      for (let seed = 1; seed <= SEEDS; seed++) {
+        const t = generate(kind, level, makeRng(seed));
+        const texts = [t.prompt, ...t.hints, ...stringsIn(t.widget.data)];
+        for (const s of texts) {
+          const ctx = `${kind} L${level} seed ${seed}: "${s}"`;
+          for (const m of s.matchAll(/(\d+)\s*\/\s*(\d+)/g)) {
+            assert.ok(Number(m[2]) <= 60, `${ctx}: Nenner ${m[2]}`);
+          }
+          assert.ok(!/\d,\d/.test(s) && !/\d\.\d/.test(s), `${ctx}: Dezimalzahl`);
+        }
+      }
+    }
+  }
+});

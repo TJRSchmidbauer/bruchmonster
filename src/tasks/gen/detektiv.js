@@ -96,7 +96,7 @@ function malNennerGleich(rng) {
 
 function teilenNennerGeteilt(rng) {
   const k = randInt(rng, 2, 5);
-  const m = randInt(rng, 2, Math.floor(20 / k));
+  const m = randInt(rng, 2, Math.floor(12 / k));
   const d = k * m;
   const a = frac(randInt(rng, 1, d - 1), d);
   const wrongRes = frac(a.n, m);
@@ -136,7 +136,7 @@ function umwandelnFalsch(rng) {
     steps: [`${formatMixed(A)} + ${formatMixed(B)}`, `= ${format(badA)} + ${format(B)}`, `= ${x}/${L} + ${y}/${L}`, `= ${x + y}/${L}`],
     wrong: 1, a: A, b: B, op: 'add',
     why: `Gemischte Zahl umwandeln heißt: Ganze mal Nenner plus Zähler, hier ${wa} · ${pa.d} + ${pa.n} = ${A.n}.`,
-    right: `${format(A)} + ${format(B)} = ${format(simplify(sum))} = ${formatMixed(sum)}`,
+    right: `${format(A)} + ${format(B)} = ${format(simplify(sum))} = ${formatMixed(simplify(sum))}`,
     tip: 'Eine gemischte Zahl hat mehr als ein Ganzes. Passt der umgewandelte Bruch überhaupt zur Größe der Ausgangszahl?',
     explain: lineExplain([A, B, simplify(sum)]),
   };
@@ -153,7 +153,7 @@ function hauptnennerNurNenner(rng) {
     steps: [`${formatMixed(A)} + ${formatMixed(B)}`, `= ${format(A)} + ${format(B)}`, `= ${A.n}/${L} + ${B.n}/${L}`, `= ${A.n + B.n}/${L}`],
     wrong: 2, a: A, b: B, op: 'add',
     why: `Beim Erweitern auf den Hauptnenner ${L} muss auch der Zähler mit dem Erweiterungsfaktor multipliziert werden.`,
-    right: `${x}/${L} + ${y}/${L} = ${x + y}/${L} = ${formatMixed(sum)}`,
+    right: `${x}/${L} + ${y}/${L} = ${x + y}/${L} = ${formatMixed(simplify(sum))}`,
     tip: 'Erweitern ändert den Wert nicht. Vergleiche vor und nach dem Erweitern, ob der Bruch noch gleich viel wert ist.',
     explain: lineExplain([A, B, simplify(sum)]),
   };

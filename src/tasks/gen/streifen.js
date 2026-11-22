@@ -132,7 +132,7 @@ function addSubTask(kind, level, rng) {
     world: WORLD, kind, level,
     prompt: pick(rng, [
       `Rechne ${show(a)} ${op} ${show(b)}. Kürzen darfst du, das Monster knurrt nur leise.`,
-      `Was ergibt ${show(a)} ${op} ${show(b)}? Gemischte Zahlen und Brüche sind erlaubt.`,
+      `Was ergibt ${show(a)} ${op} ${show(b)}? Bruch oder gemischte Zahl, beides passt.`,
     ]),
     widget: { type: 'input', data: {} },
     answer: { type: 'frac', value },
@@ -163,13 +163,15 @@ export function bruchteilVomBruchteil(level, rng) {
   const bShow = level === 3 ? formatMixed(b) : format(b);
   return makeTask(rng, {
     world: WORLD, kind: 'bruchteil-vom-bruchteil', level,
-    prompt: `Das Monster frisst ${format(a)} von ${bShow} einer Pizza. Wie viel von der ganzen Pizza ist das?`,
+    prompt: level === 3
+      ? `Das Monster frisst ${format(a)} von ${bShow} Pizzen. Wie viele ganze Pizzen sind das?`
+      : `Das Monster frisst ${format(a)} von ${bShow} einer Pizza. Wie viel von der ganzen Pizza ist das?`,
     widget: { type: 'input', data: {} },
     answer: { type: 'frac', value },
     hints: [
       '„Von" heißt hier „mal". Du nimmst einen Teil von einem Teil, das Ergebnis muss also kleiner werden.',
       'Zeichne den zweiten Bruch als Streifen und zerlege dann jedes Stück in so viele Teile, wie der Nenner des ersten Bruchs sagt.',
-      `Zähler mal Zähler, Nenner mal Nenner: ${a.n}·${b.n} / ${a.d}·${b.d} = ${p.n}/${p.d}${format(value) === format(p) ? '' : ` = ${format(value)}`}.`,
+      `Zähler mal Zähler, Nenner mal Nenner: (${a.n}·${b.n}) / (${a.d}·${b.d}) = ${p.n}/${p.d}${format(value) === format(p) ? '' : ` = ${format(value)}`}.`,
     ],
     explain: level === 3
       ? lineExplain([b, value])

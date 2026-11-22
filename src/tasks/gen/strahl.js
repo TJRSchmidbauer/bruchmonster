@@ -1,8 +1,16 @@
 // Welt "Zahlenstrahl": platzieren, schaetzen, vergleichen, dazwischen.
 import { randInt, pick } from '../../core/rng.js';
-import { frac, simplify, lcm, compare, format } from '../../core/fractions.js';
+import { frac, simplify, lcm, compare, format, formatMixed } from '../../core/fractions.js';
 import { makeTask } from '../types.js';
 import { retry, properFrac, lineExplain } from './shared.js';
+
+// Orientierung in Vierteln, ohne Dezimalzahlen.
+function quarterHint(f) {
+  const q = (f.n * 4) / f.d;
+  const lo = frac(Math.floor(q), 4);
+  const hi = frac(Math.ceil(q), 4);
+  return `${format(f)} liegt zwischen ${formatMixed(lo)} und ${formatMixed(hi)}. Setz deinen Punkt in diese Gegend.`;
+}
 
 const WORLD = 'strahl';
 const sym = ['<', '=', '>'];
@@ -51,7 +59,7 @@ export function schaetzen(level, rng) {
     hints: [
       'Ist der Bruch kleiner oder größer als ein halbes Ganzes? Zähler und Nenner im Vergleich verraten das.',
       'Teile die Strecke im Kopf: erst in die Hälfte, dann in Viertel. So kommst du in die richtige Gegend.',
-      `${format(f)} ist ungefähr ${(f.n / f.d).toFixed(1).replace('.', ',')} Ganze von 0 aus. Setz deinen Punkt in diese Gegend.`,
+      quarterHint(f),
     ],
     explain: lineExplain([f, half], 0),
     meta: { a: f },
@@ -94,7 +102,9 @@ export function vergleichen(level, rng) {
     widget: { type: 'choice', data: { options: ['<', '=', '>'] } },
     answer: { type: 'choice', value: c + 1 },
     hints: [
-      'Bringe beide Brüche auf gleich große Stücke. Dann musst du nur noch zählen, wer mehr davon hat.',
+      a.d === b.d
+        ? 'Die Stücke sind gleich groß. Wer hat mehr davon?'
+        : 'Bringe beide Brüche auf gleich große Stücke. Dann musst du nur noch zählen, wer mehr davon hat.',
       'Schau beide Brüche auf dem Zahlenstrahl an: Wer weiter rechts steht, ist größer.',
       `Hauptnenner ${L}: ${format(a)} = ${ax}/${L} und ${format(b)} = ${bx}/${L}. Also ${format(a)} ${sym[c + 1]} ${format(b)}.`,
     ],
