@@ -523,3 +523,7 @@ h1:focus { outline: none; box-shadow: none; }
   }
   .btn:active, .tile:active { transform: none; }
 }
+
+.legal { margin-top: 1.5rem; text-align: center; opacity: 0.85; }
+.legal p { margin: 0.25rem 0; }
+.legal a { color: inherit; text-decoration: underline; }

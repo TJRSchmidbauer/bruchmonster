@@ -1,38 +1,50 @@
 # Bruchmonster
 
-Bruchmonster ist eine lokale Lern-App für Klasse 6 (10 bis 12 Jahre): Bruchrechnen in vier Welten, dazu ein Comic-Monster, das mit jeder richtigen Antwort wächst. Oberfläche auf Deutsch, Anrede "du", Ton frech, aber nie spöttisch.
+Eine Lern-App zur Bruchrechnung für die 6. Klasse (Gymnasium und Realschule). Kinder üben in vier frei wählbaren Welten, verdienen Münzen und ziehen damit ein Comic-Monster groß: füttern, einkleiden, eine Höhle einrichten, Sammelkarten finden.
 
-## Öffnen
+Die App besteht aus **einer einzigen HTML-Datei**. Sie läuft komplett im Browser, braucht kein Internet, kein Konto und keinen Server. Es werden keine Daten übertragen, und Schriften oder Skripte kommen nicht von fremden Servern.
 
-Die Datei `bruchmonster.html` (aus `dist/`) per Doppelklick im Browser öffnen. Sie ist eine einzelne Datei, läuft ohne Internet und fragt keine fremden Server an. Es werden keine Daten an irgendjemanden gesendet. Funktioniert mit Maus, Touch und Tastatur, von 360 bis 1440 px Breite.
+**[Zur Datei `dist/bruchmonster.html`](dist/bruchmonster.html)** (auf „Raw“ klicken, speichern, per Doppelklick öffnen)
 
-## Spielstand sichern und mitnehmen
+## Worum es didaktisch geht
 
-Der Spielstand liegt im Speicher des Browsers (`localStorage`). Wer den Verlauf löscht oder ein anderes Gerät benutzt, braucht eine Sicherung:
+Die App will nicht nur Rechenwege abfragen, sondern das System hinter den Brüchen sichtbar machen. Die Ideen dahinter stammen aus der Didaktik der Bruchrechnung (Grundvorstellungen nach Malle, Padberg, Wartha; Ergebnisse aus PALMA).
 
-- **Exportieren:** Profil-Bildschirm (oben auf den Namen tippen), beim Profil "Exportieren". Es entsteht eine kleine `.json`-Datei.
-- **Importieren:** Auf dem Profil-Bildschirm unter "Spielstand mitbringen" die Datei auswählen.
-- Im Privatmodus oder bei gesperrtem Speicher warnt die App und bleibt trotzdem benutzbar. Dann vor dem Schließen exportieren.
+- **Vier Zugänge zum selben Stoff.** Kinder wählen frei, die App empfiehlt nur. Gesperrt wird nichts.
+  - **Zahlenstrahl-Labor:** Brüche platzieren, schätzen, vergleichen.
+  - **Bruchstreifen-Werkstatt:** darstellen, erweitern, kürzen, addieren, subtrahieren, Bruchteil vom Bruchteil.
+  - **Alltag und Rezepte:** Anteile von Größen, Rezepte umrechnen, Teilen durch natürliche Zahlen.
+  - **Fehler-Detektiv:** den Fehler in einer Rechnung finden und Regeln selbst entdecken.
+- **Ausprobieren zuerst.** Vor jeder neuen Aufgabenart steht ein kleines Experiment, erst danach kommt die Regel. „Kenn ich schon“ überspringt es.
+- **Längen statt Flächen.** Zahlenstrahl und Streifen sind die Hauptdarstellungen, weil sie die Zahlvorstellung stützen.
+- **Typische Fehlvorstellungen werden erkannt.** Wer „Zähler plus Zähler, Nenner plus Nenner“ rechnet, bekommt eine passende Gegenzeichnung statt nur „falsch“.
+- **Hilfe in Stufen.** Bis zu drei Tipps, dann eine Erklärzeichnung. Die Lösung zeigt die App erst nach Versuchen.
+- **Raten lohnt sich nicht.** Nach einem Fehlversuch gibt es bei Auswahl-, Zahlenstrahl- und Streifenaufgaben keine Münzen mehr. Je Aufgabenart gilt ein Tageslimit. Es gibt keine Rangliste und keine Konkurrenz.
 
-## Für Lehrkräfte
+Stoff: Bruchbegriff, Darstellen, Vergleichen, Erweitern und Kürzen, Addieren und Subtrahieren, Multiplizieren und Teilen durch natürliche Zahlen (angelehnt an LehrplanPLUS Mathematik 6, Bayern).
 
-Vier Welten, je mit eigenen Aufgabenarten in drei Stufen:
+## Benutzung
 
-- **Zahlenstrahl-Labor:** platzieren, schätzen, vergleichen, dazwischen.
-- **Bruchstreifen-Werkstatt:** darstellen, erweitern, kürzen, addieren, subtrahieren, Bruchteil vom Bruchteil.
-- **Alltag und Rezepte:** Anteil von einer Größe, Rezepte umrechnen, teilen durch natürliche Zahlen.
-- **Fehler-Detektiv:** den Fehler in einer Rechnung finden, Regeln selbst entdecken.
+1. `dist/bruchmonster.html` herunterladen und im Browser öffnen. Getestet ist die App mit Chrome; andere aktuelle Browser sollten funktionieren, sind aber nicht geprüft. Maus, Touch und Tastatur sind vorgesehen.
+2. Namen eingeben, Monster bekommen, Welt wählen.
 
-Didaktische Idee:
+**Wichtig:** Zum Spielen die Datei herunterladen und im normalen Browser-Fenster öffnen. In Vorschau-Fenstern (etwa in Chat-Programmen oder E-Mail-Vorschauen) kann der Browser das Speichern sperren, dann ist der Spielstand beim Schließen weg.
 
-- **Grundvorstellungen:** Bruch als Teil eines Ganzen, als Anteil, als Zahl auf dem Strahl und als Ergebnis einer Division. Die Welten bedienen jeweils eine andere Sicht.
-- **Zahlenstrahl und Streifen** sind die zwei Hauptdarstellungen. Aufgaben zum Einfärben und Setzen sind bedienbar (Ziehen, Tippen, Tastatur).
-- **Fehlvorstellungen** werden erkannt (zum Beispiel "Zähler plus Zähler, Nenner plus Nenner") und mit einer passenden Gegenzeichnung beantwortet statt nur mit "falsch".
-- **Ausprobieren zuerst:** Zu neuen Themen gibt es ein kurzes Experiment mit Regel-Karte, bevor Aufgaben kommen ("Kenn ich schon" überspringt es).
-- **Hilfen in Stufen:** bis zu drei Tipps, dann eine Erklärzeichnung, die Lösung erst nach Versuchen.
-- **Belohnung:** Münzen (mit Tageslimit je Aufgabenart gegen Dauerklicken), Futter, Kleidung, Farben, Möbel und Sammelkarten mit Merksätzen. Es gibt keine Rangliste und keine Konkurrenz.
+### Spielstand sichern
 
-## Bauen
+Der Spielstand liegt im Speicher des Browsers. Wer den Verlauf löscht oder das Gerät wechselt, braucht eine Sicherung:
+
+- **Exportieren:** auf dem Profilbildschirm beim Profil „Exportieren“, oder im Hub „Spielstand sichern“. Es entsteht eine kleine `.json`-Datei.
+- **Importieren:** auf dem Profilbildschirm unter „Spielstand mitbringen“.
+- Kann der Browser nicht speichern (Privatmodus, gesperrter Speicher), weist die App darauf hin und bleibt benutzbar.
+
+## Grenzen
+
+- Die App ist **noch nicht mit Kindern im Unterricht erprobt**.
+- Ein Test mit echtem Touch-Gerät und eine Kontrastmessung stehen noch aus. Bei 9 bis 12 Streifenstücken sind einzelne Stücke schmaler als 44 px. Als Ausweg gibt es „Ein Stück mehr/weniger“ und das Ziehen über mehrere Stücke.
+- Eine Einbindung in Moodle oder mebis (SCORM, H5P) ist denkbar, aber nicht gebaut.
+
+## Entwicklung
 
 Voraussetzung: Node 22.
 
@@ -42,15 +54,27 @@ npm test          # Tests (node:test, linkedom)
 npm run build     # schreibt dist/bruchmonster.html
 ```
 
-Die Abnahme im Browser (Playwright und Chrome) ist skriptgesteuert und wiederholbar:
+Aufbau: ES-Module in `src/` (Rechenkern in `src/core/`, Aufgaben in `src/tasks/`, Oberfläche in `src/ui/`), esbuild bündelt Skript, Stile und Schriften in eine Datei. Die Browser-Abnahme mit Playwright und Chrome ist skriptgesteuert:
 
 ```
 node scripts/build-e2e.mjs
 python3 scripts/acceptance.py --md tests/e2e-smoke.md
 ```
 
-Schriften (OFL) sind eingebettet, es gibt keine externen Abhängigkeiten zur Laufzeit.
+Entwurf und Plan liegen in `docs/superpowers/`, die Gestaltungsidee in `docs/design-direction.md`.
 
-## Ausblick
+## Hinweis zu KI
 
-Eine Verpackung für Moodle oder mebis (SCORM oder H5P) wäre später möglich. Sie ist nicht gebaut.
+Dieses Projekt ist mit KI-Unterstützung entstanden. Konzept, Didaktik, Auswahl der Inhalte und Freigabe stammen von mir. Programmcode, Aufgabentexte und Erklärungen hat weitgehend **Claude** (Anthropic) geschrieben, die Bruchrechnung der Aufgabengeneratoren ist durch automatische Tests abgesichert.
+
+KI macht Fehler. Bitte sieh dir Aufgaben, Tipps und Erklärungen vor dem Einsatz im Unterricht selbst an und melde Fehler gern als Issue.
+
+Mehr zu mir und meinem Umgang mit KI: **[schmidbauer.io](https://schmidbauer.io)**
+
+## Lizenz
+
+© 2026 Tobias Schmidbauer
+
+[Creative Commons Namensnennung – Nicht kommerziell 4.0 International (CC BY-NC 4.0)](https://creativecommons.org/licenses/by-nc/4.0/deed.de). Nutzen, Kopieren, Weitergeben und Verändern sind erlaubt, auch im Unterricht, aber nur mit Namensnennung und nicht kommerziell. Die Nennung (Name und Lizenz) steht auf der Startseite der App und muss bei Weitergabe erhalten bleiben. Den Volltext enthält die Datei [`LICENSE`](LICENSE).
+
+Die eingebetteten Schriften **Grandstander** und **Atkinson Hyperlegible** stehen unter der SIL Open Font License 1.1 und behalten ihre eigene Lizenz.

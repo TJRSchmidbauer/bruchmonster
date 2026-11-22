@@ -105,7 +105,13 @@ export function renderProfile(root, _params, app) {
           h('h2', { class: 'card__title' }, 'Spielstand mitbringen'),
           h('p', { class: 'small' }, 'Hast du einen Spielstand als Datei? Hol ihn hier zurück.'),
           h('input', { id: 'import-datei', class: 'sr-only', type: 'file', accept: '.json,application/json', tabindex: -1, onchange: onFile }),
-          button('Datei auswählen', { variant: 'secondary', onClick: () => root.querySelector('#import-datei').click() }))));
+          button('Datei auswählen', { variant: 'secondary', onClick: () => root.querySelector('#import-datei').click() })),
+        h('footer', { class: 'legal small' },
+          h('p', null, '© 2026 Tobias Schmidbauer · ',
+            h('a', { href: 'https://creativecommons.org/licenses/by-nc/4.0/deed.de', target: '_blank', rel: 'noopener noreferrer' }, 'CC BY-NC 4.0'),
+            ' · ',
+            h('a', { href: 'https://schmidbauer.io', target: '_blank', rel: 'noopener noreferrer' }, 'schmidbauer.io')),
+          h('p', null, 'Mit KI-Unterstützung entwickelt. Die App selbst sendet nichts ins Netz.'))));
     const h1 = root.querySelector('h1');
     h1.setAttribute('tabindex', '-1');
     if (focusSel) (root.querySelector(focusSel) ?? h1).focus();

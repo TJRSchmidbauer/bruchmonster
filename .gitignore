@@ -1,4 +1,5 @@
 node_modules
-dist
+dist/*
+!dist/bruchmonster.html
 .superpowers
 shots/

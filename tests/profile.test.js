@@ -51,3 +51,11 @@ test('Enter im Namensfeld legt genau ein Profil an', () => {
   input.dispatchEvent(ev);
   assert.deepEqual(opened, ['Ben']);
 });
+
+test('Startseite nennt Urheber und Lizenz (CC BY-NC 4.0)', () => {
+  const { root } = setup();
+  const text = root.querySelector('.legal')?.textContent ?? '';
+  assert.ok(text.includes('Tobias Schmidbauer'), 'Name');
+  assert.ok(text.includes('CC BY-NC 4.0'), 'Lizenz');
+  assert.ok(text.includes('schmidbauer.io'), 'Homepage');
+});
