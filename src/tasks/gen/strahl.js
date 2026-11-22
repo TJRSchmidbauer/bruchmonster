@@ -7,9 +7,14 @@ import { retry, properFrac, lineExplain } from './shared.js';
 // Orientierung in Vierteln, ohne Dezimalzahlen.
 function quarterHint(f) {
   const q = (f.n * 4) / f.d;
-  const lo = frac(Math.floor(q), 4);
-  const hi = frac(Math.ceil(q), 4);
-  return `${format(f)} liegt zwischen ${formatMixed(lo)} und ${formatMixed(hi)}. Setz deinen Punkt in diese Gegend.`;
+  const nice = (n) => formatMixed(simplify(frac(n, 4)));
+  if (Number.isInteger(q)) {
+    const same = format(simplify(f)) === format(f);
+    return same
+      ? `${format(f)} liegt genau auf einem Viertel-Strich. Teile die Strecke im Kopf in Viertel und zähle ab.`
+      : `${format(f)} ist gekürzt ${nice(q)} und liegt genau auf einem Viertel-Strich. Setz deinen Punkt dorthin.`;
+  }
+  return `${format(f)} liegt zwischen ${nice(Math.floor(q))} und ${nice(Math.ceil(q))}. Setz deinen Punkt in diese Gegend.`;
 }
 
 const WORLD = 'strahl';

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { makeRng, randInt, pick } from '../src/core/rng.js';
-import { frac, compare, format } from '../src/core/fractions.js';
+import { frac, compare, format, parseAnswer, isSimplified } from '../src/core/fractions.js';
 import { KINDS, generate, checkAnswer } from '../src/tasks/generators.js';
 
 const SEEDS = 200;
@@ -238,6 +238,21 @@ test('Texte: alle Nenner <= 60, keine Dezimalzahlen', () => {
           }
           assert.ok(!/\d,\d/.test(s) && !/\d\.\d/.test(s), `${ctx}: Dezimalzahl`);
         }
+      }
+    }
+  }
+});
+
+test('schaetzen: Tipp 3 hat verschiedene, gekuerzte Endpunkte oder "genau bei"', () => {
+  for (const level of LEVELS) {
+    for (let seed = 1; seed <= SEEDS; seed++) {
+      const h = generate('schaetzen', level, makeRng(seed)).hints[2];
+      const m = /zwischen (.+?) und (.+?)\. /.exec(h);
+      if (!m) { assert.match(h, /genau auf einem Viertel-Strich/, h); continue; }
+      assert.notEqual(m[1], m[2], h);
+      for (const e of [m[1], m[2]]) {
+        const p = parseAnswer(e);
+        assert.ok(p.ok && isSimplified(p.value), `${h}: Endpunkt ${e}`);
       }
     }
   }
