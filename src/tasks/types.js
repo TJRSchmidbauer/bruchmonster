@@ -8,6 +8,7 @@
 //       | { type:'choice'|'marks', value:number }
 
 import { parseAnswer, equal, compare, isSimplified } from '../core/fractions.js';
+import { diagnose } from './errors.js';
 
 export const WORLDS = ['strahl', 'streifen', 'alltag', 'detektiv'];
 
@@ -59,7 +60,18 @@ function checkFrac(a, input) {
   return { correct: true };
 }
 
+function withMistake(task, input, res) {
+  if (res.correct) return res;
+  const mistake = diagnose(task, input);
+  return mistake ? { ...res, mistake } : res;
+}
+
 export function checkAnswer(task, input) {
+  const res = rawCheck(task, input);
+  return res.invalid ? res : withMistake(task, input, res);
+}
+
+function rawCheck(task, input) {
   const a = task.answer;
   switch (a.type) {
     case 'frac':
