@@ -271,3 +271,42 @@ test('anteil-von-groesse: Euro nur bei ganzzahligem Ergebnis', () => {
   }
   assert.ok(euro > 0, 'Euro kommt bei ganzen Ergebnissen weiterhin vor');
 });
+
+test('Schwierigkeit: vergleichen Stufe 3 ist knapp oder gleichwertig, nie über 1/2 entscheidbar', () => {
+  for (let seed = 0; seed < 300; seed++) {
+    const { a, b } = generate('vergleichen', 3, makeRng(seed)).meta;
+    const va = a.n / a.d;
+    const vb = b.n / b.d;
+    assert.notEqual(a.d, b.d, 'nie gleicher Nenner');
+    if (va === vb) continue;
+    assert.ok(Math.abs(va - vb) <= 1 / 24 + 1e-12, `zu weit auseinander: ${a.n}/${a.d} ${b.n}/${b.d}`);
+    assert.ok((va - 0.5) * (vb - 0.5) > 0, 'beide auf derselben Seite von 1/2');
+    assert.ok(a.d % b.d !== 0 && b.d % a.d !== 0, 'kein Nenner Vielfaches des anderen');
+  }
+});
+
+test('Schwierigkeit: vergleichen Stufe 2 nie gleicher Nenner, höchstens 1/4 Abstand', () => {
+  for (let seed = 0; seed < 300; seed++) {
+    const { a, b } = generate('vergleichen', 2, makeRng(seed)).meta;
+    assert.notEqual(a.d, b.d);
+    assert.ok(Math.abs(a.n / a.d - b.n / b.d) <= 0.25 + 1e-12);
+  }
+});
+
+test('Schwierigkeit: platzieren ab Stufe 2 passt Einteilung nicht zum Nenner', () => {
+  for (const level of [2, 3]) {
+    for (let seed = 0; seed < 200; seed++) {
+      const t = generate('platzieren', level, makeRng(seed));
+      assert.notEqual(t.widget.data.ticks, t.answer.value.d, `Stufe ${level}`);
+      const steps = (t.answer.value.n * t.widget.data.ticks) / t.answer.value.d;
+      assert.ok(Number.isInteger(steps), 'Ziel liegt auf einem Strich');
+    }
+  }
+});
+
+test('Schwierigkeit: dazwischen Stufe 3 sind direkte Nachbarn', () => {
+  for (let seed = 0; seed < 200; seed++) {
+    const { a, b } = generate('dazwischen', 3, makeRng(seed)).meta;
+    assert.equal(b.n * a.d - a.n * b.d, a.d === b.d ? a.d : 1);
+  }
+});

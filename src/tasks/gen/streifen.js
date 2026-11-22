@@ -108,6 +108,13 @@ function operands(rng, level, forSub) {
       const c = compare(a, b);
       if (c === 0) return null;
       if (c < 0) [a, b] = [b, a];
+      // Stufe 3: meist muss man ein Ganzes aufbrechen (4 1/5 - 1 2/3), ganze Teile verschieden.
+      if (level === 3) {
+        const restA = (a.n % a.d) / a.d;
+        const restB = (b.n % b.d) / b.d;
+        if (Math.floor(a.n / a.d) === Math.floor(b.n / b.d)) return null;
+        if (restA >= restB && rng() < 0.7) return null;
+      }
     }
     return { a, b };
   });
