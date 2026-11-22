@@ -107,15 +107,46 @@ test('importProfile ergaenzt fehlende Felder aus alter Datei mit Standardwerten'
   assert.equal(res.profile.version, 1);
 });
 
-test('importProfile meldet beschaedigt bei falschen Typen', () => {
+test('importProfile repariert falsche Felder einzeln, solange format und version stimmen', () => {
   const wrap = (profile) => JSON.stringify({ format: 'bruchmonster', version: 1, profile });
-  assert.deepEqual(importProfile(wrap({ coins: -1 })), { ok: false, reason: 'beschaedigt' });
-  assert.deepEqual(importProfile(wrap({ coins: '5' })), { ok: false, reason: 'beschaedigt' });
-  assert.deepEqual(importProfile(wrap({ coins: null })), { ok: false, reason: 'beschaedigt' });
-  assert.deepEqual(importProfile(wrap({ owned: [1, 2] })), { ok: false, reason: 'beschaedigt' });
-  assert.deepEqual(importProfile(wrap({ owned: 'hut' })), { ok: false, reason: 'beschaedigt' });
-  assert.deepEqual(importProfile(wrap({ name: 5 })), { ok: false, reason: 'beschaedigt' });
-  assert.deepEqual(importProfile(wrap({ streak: { days: 'x', lastDate: '' } })), { ok: false, reason: 'beschaedigt' });
+  const prof = (over) => importProfile(wrap(over)).profile;
+  assert.equal(importProfile(wrap({ coins: -1 })).ok, true);
+  assert.equal(prof({ coins: -1 }).coins, 0);
+  assert.equal(prof({ coins: '5' }).coins, 0);
+  assert.equal(prof({ coins: null }).coins, 0);
+  assert.equal(prof({ xp: 7, coins: -3 }).xp, 7);
+  assert.deepEqual(prof({ owned: [1, 'hut', 2] }).owned, ['hut']);
+  assert.deepEqual(prof({ owned: 'hut' }).owned, []);
+  assert.equal(prof({ name: 5 }).name, 'Monsterfreund');
+  assert.deepEqual(prof({ streak: { days: 'x', lastDate: '2026-01-01' } }).streak, { days: 0, lastDate: '2026-01-01' });
+  assert.deepEqual(prof({ wearing: { hat: 'a', shoe: 5 } }).wearing, { hat: 'a' });
+  assert.deepEqual(prof({ mastery: { kuerzen: { right: 1, wrong: 0, last: 3 }, x: { right: -1 } } }).mastery,
+    { kuerzen: { right: 1, wrong: 0, last: 3 } });
+  assert.deepEqual(prof({ daily: 5 }).daily, {});
+  assert.equal(prof({ coins: NaN, color: 7 }).color, 'kiwi');
+});
+
+test('importProfile lehnt Nicht-Objekt-Profile und falsche version weiter ab', () => {
+  assert.equal(importProfile(JSON.stringify({ format: 'bruchmonster', version: 1, profile: [] })).reason, 'falsches-format');
+  assert.equal(importProfile(JSON.stringify({ format: 'bruchmonster', version: 0, profile: {} })).reason, 'beschaedigt');
+  assert.equal(importProfile(JSON.stringify({ format: 'bruchmonster', version: 2, profile: {} })).reason, 'zu-neu');
+});
+
+test('load repariert ein teilweise kaputtes Profil statt null zu liefern', () => {
+  const backend = fakeBackend();
+  const store = createStore(backend, { makeId: fixedIds() });
+  const { profile: p } = store.createProfile('Mia');
+  backend.setItem(`bruchmonster:profile:${p.id}`, JSON.stringify({ ...p, coins: -5, xp: 40, owned: ['a', 3], cards: 'x', name: 'Mia' }));
+  const got = store.load(p.id);
+  assert.ok(got);
+  assert.equal(got.coins, 0);
+  assert.equal(got.xp, 40);
+  assert.deepEqual(got.owned, ['a']);
+  assert.deepEqual(got.cards, []);
+  assert.equal(got.name, 'Mia');
+  assert.equal(got.id, p.id);
+  backend.setItem(`bruchmonster:profile:${p.id}`, '"text"');
+  assert.equal(store.load(p.id), null);
 });
 
 test('importProfile nimmt Profil-Id nicht aus der Datei und speichert nicht', () => {
@@ -287,7 +318,7 @@ test('save ersetzt bestehenden Eintrag an Ort und Stelle und normalisiert den Na
   assert.equal(store.load(a.id).name, 'Umbenannt');
 });
 
-test('seen: Standard leer, fehlend wird [], falscher Typ ist beschaedigt, bleibt beim Export erhalten', () => {
+test('seen: Standard leer, fehlend wird [], falscher Typ wird repariert, bleibt beim Export erhalten', () => {
   assert.deepEqual(defaultProfile('Mia', 'p1').seen, []);
   const base = defaultProfile('Mia', 'p1');
   const { seen, ...noSeen } = base;
@@ -295,7 +326,49 @@ test('seen: Standard leer, fehlend wird [], falscher Typ ist beschaedigt, bleibt
   assert.equal(ok.ok, true);
   assert.deepEqual(ok.profile.seen, []);
   const bad = importProfile(JSON.stringify({ format: 'bruchmonster', version: 1, profile: { ...base, seen: [1] } }));
-  assert.equal(bad.ok, false);
+  assert.deepEqual(bad.profile.seen, []);
   const good = importProfile(exportProfile({ ...base, seen: ['platzieren'] }));
   assert.deepEqual(good.profile.seen, ['platzieren']);
+});
+
+// Backend mit Schluessel-Aufzaehlung wie localStorage.
+function enumBackend() {
+  const b = fakeBackend();
+  Object.defineProperty(b, 'length', { get: () => b.raw.size });
+  b.key = (i) => [...b.raw.keys()][i] ?? null;
+  return b;
+}
+
+test('Index kaputt: Backup vor dem Ueberschreiben, Index wird aus Profil-Schluesseln neu aufgebaut', () => {
+  const backend = enumBackend();
+  const store0 = createStore(backend, { makeId: fixedIds() });
+  const a = store0.createProfile('Eins').profile;
+  const b = store0.createProfile('Zwei').profile;
+  backend.setItem('bruchmonster:profiles', '{kaputt');
+  const store = createStore(backend, { makeId: fixedIds() });
+  const names = store.listProfiles().map((e) => e.name).sort();
+  assert.deepEqual(names, ['Eins', 'Zwei']);
+  assert.equal(backend.getItem('bruchmonster:profiles'), '{kaputt', 'Lesen veraendert nichts');
+  const c = defaultProfile('Drei', 'c1');
+  assert.deepEqual(store.save(c), { ok: true });
+  assert.equal(backend.getItem('bruchmonster:profiles.bak'), '{kaputt');
+  assert.deepEqual(store.listProfiles().map((e) => e.id).sort(), [a.id, b.id, 'c1'].sort());
+});
+
+test('Index kaputt ohne Aufzaehlung: leere Liste, Backup trotzdem vor dem Schreiben', () => {
+  const backend = fakeBackend();
+  backend.setItem('bruchmonster:profiles', 'xx');
+  const store = createStore(backend);
+  assert.deepEqual(store.listProfiles(), []);
+  assert.deepEqual(store.save(defaultProfile('Neu', 'n1')), { ok: true });
+  assert.equal(backend.getItem('bruchmonster:profiles.bak'), 'xx');
+  assert.deepEqual(store.listProfiles(), [{ id: 'n1', name: 'Neu' }]);
+});
+
+test('Index fehlt oder ist gueltig: kein Backup', () => {
+  const backend = enumBackend();
+  const store = createStore(backend);
+  store.createProfile('A');
+  store.createProfile('B');
+  assert.equal(backend.getItem('bruchmonster:profiles.bak'), null);
 });

@@ -2,7 +2,9 @@
 // Reine Logik ohne UI. Standard-Backend ist localStorage, Fallback ist der Speicher im Arbeitsspeicher.
 
 const INDEX_KEY = 'bruchmonster:profiles';
-const profileKey = (id) => `bruchmonster:profile:${id}`;
+const INDEX_BAK_KEY = 'bruchmonster:profiles.bak';
+const PROFILE_PREFIX = 'bruchmonster:profile:';
+const profileKey = (id) => `${PROFILE_PREFIX}${id}`;
 const DEFAULT_NAME = 'Monsterfreund';
 
 export function newId() {
@@ -39,62 +41,37 @@ export function defaultProfile(name, id = newId(), createdAt = new Date().toISOS
 
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const isNonNeg = (v) => typeof v === 'number' && Number.isFinite(v) && v >= 0;
-const isStrArr = (v) => Array.isArray(v) && v.every((s) => typeof s === 'string');
 
-// Prueft alle Felder. Fehlende Felder kommen aus den Standardwerten, falsche Typen ergeben null.
+// Repariert jedes Feld einzeln: Fehlende oder kaputte Felder kommen aus den Standardwerten,
+// kaputte Listeneintraege werden verworfen. Nur ein Nicht-Objekt ergibt null.
 function fillProfile(raw, id, createdAt) {
   if (!isObj(raw)) return null;
-  const base = defaultProfile('', id, createdAt);
-  const out = { ...base };
+  const out = defaultProfile('', id, createdAt);
 
-  if (raw.name !== undefined) {
-    if (typeof raw.name !== 'string') return null;
-    out.name = normalizeName(raw.name);
-  }
-  for (const k of ['coins', 'xp']) {
-    if (raw[k] !== undefined) {
-      if (!isNonNeg(raw[k])) return null;
-      out[k] = raw[k];
-    }
-  }
+  if (typeof raw.name === 'string') out.name = normalizeName(raw.name);
+  for (const k of ['coins', 'xp']) if (isNonNeg(raw[k])) out[k] = raw[k];
   for (const k of ['owned', 'cave', 'cards', 'seen']) {
-    if (raw[k] !== undefined) {
-      if (!isStrArr(raw[k])) return null;
-      out[k] = raw[k];
-    }
+    if (Array.isArray(raw[k])) out[k] = raw[k].filter((x) => typeof x === 'string');
   }
-  if (raw.wearing !== undefined) {
-    if (!isObj(raw.wearing) || !Object.values(raw.wearing).every((v) => typeof v === 'string')) return null;
-    out.wearing = raw.wearing;
+  if (isObj(raw.wearing)) {
+    out.wearing = Object.fromEntries(Object.entries(raw.wearing).filter(([, v]) => typeof v === 'string'));
   }
-  if (raw.mastery !== undefined) {
-    const ok = isObj(raw.mastery) && Object.values(raw.mastery).every((m) =>
-      isObj(m) && isNonNeg(m.right) && isNonNeg(m.wrong) && isNonNeg(m.last));
-    if (!ok) return null;
-    out.mastery = raw.mastery;
+  if (isObj(raw.mastery)) {
+    out.mastery = Object.fromEntries(Object.entries(raw.mastery).filter(([, m]) =>
+      isObj(m) && isNonNeg(m.right) && isNonNeg(m.wrong) && isNonNeg(m.last)));
   }
-  if (raw.daily !== undefined) {
-    const ok = isObj(raw.daily) && Object.values(raw.daily).every((d) =>
-      isObj(d) && typeof d.date === 'string' && isNonNeg(d.coins));
-    if (!ok) return null;
-    out.daily = raw.daily;
+  if (isObj(raw.daily)) {
+    out.daily = Object.fromEntries(Object.entries(raw.daily).filter(([, d]) =>
+      isObj(d) && typeof d.date === 'string' && isNonNeg(d.coins)));
   }
-  if (raw.streak !== undefined) {
-    const s = raw.streak;
-    if (!isObj(s)) return null;
-    const days = s.days ?? 0;
-    const lastDate = s.lastDate ?? '';
-    if (!isNonNeg(days) || typeof lastDate !== 'string') return null;
-    out.streak = { days, lastDate };
+  if (isObj(raw.streak)) {
+    out.streak = {
+      days: isNonNeg(raw.streak.days) ? raw.streak.days : 0,
+      lastDate: typeof raw.streak.lastDate === 'string' ? raw.streak.lastDate : '',
+    };
   }
-  if (raw.color !== undefined) {
-    if (typeof raw.color !== 'string') return null;
-    out.color = raw.color;
-  }
-  if (raw.createdAt !== undefined) {
-    if (typeof raw.createdAt !== 'string') return null;
-    out.createdAt = raw.createdAt;
-  }
+  if (typeof raw.color === 'string') out.color = raw.color;
+  if (typeof raw.createdAt === 'string') out.createdAt = raw.createdAt;
   out.id = id;
   out.version = 1;
   return out;
@@ -125,17 +102,54 @@ function resolveBackend(backend) {
 export function createStore(backend, { makeId = newId, now = () => new Date().toISOString() } = {}) {
   const { be, persistent } = resolveBackend(backend);
 
-  function readIndex() {
+  // Liest den Index. Ist er vorhanden, aber unlesbar, kommt die Liste aus den Profil-Schluesseln
+  // (wenn das Backend Schluessel aufzaehlen kann); `corruptRaw` merkt sich den Rohtext fuers Backup.
+  function readIndexState() {
+    let raw = null;
     try {
-      const arr = JSON.parse(be.getItem(INDEX_KEY) ?? 'null');
-      if (!Array.isArray(arr)) return [];
-      return arr
-        .filter((e) => isObj(e) && typeof e.id === 'string' && typeof e.name === 'string')
-        .map((e) => ({ id: e.id, name: e.name }));
+      raw = be.getItem(INDEX_KEY);
+      if (raw == null) return { list: [], corruptRaw: null };
+      const arr = JSON.parse(raw);
+      if (!Array.isArray(arr)) throw new Error('kein Array');
+      return {
+        list: arr
+          .filter((e) => isObj(e) && typeof e.id === 'string' && typeof e.name === 'string')
+          .map((e) => ({ id: e.id, name: e.name })),
+        corruptRaw: null,
+      };
     } catch {
-      return [];
+      return { list: rebuildIndex(), corruptRaw: typeof raw === 'string' ? raw : '' };
     }
   }
+
+  function rebuildIndex() {
+    const list = [];
+    try {
+      if (typeof be.key !== 'function' || typeof be.length !== 'number') return list;
+      for (let i = 0; i < be.length; i++) {
+        const k = be.key(i);
+        if (typeof k !== 'string' || !k.startsWith(PROFILE_PREFIX)) continue;
+        const id = k.slice(PROFILE_PREFIX.length);
+        const p = fillProfile(JSON.parse(be.getItem(k)), id, now());
+        if (p) list.push({ id, name: p.name });
+      }
+    } catch {
+      // Aufzaehlen klappt nicht; es bleibt bei dem, was gefunden wurde.
+    }
+    return list;
+  }
+
+  // Vor dem ersten Schreiben eines unlesbaren Index den alten Text sichern.
+  function backupCorrupt(state) {
+    if (state.corruptRaw == null) return;
+    try {
+      be.setItem(INDEX_BAK_KEY, state.corruptRaw);
+    } catch {
+      // Backup schlaegt fehl; das Schreiben des Index passiert trotzdem.
+    }
+  }
+
+  const readIndex = () => readIndexState().list;
 
   function listProfiles() {
     return readIndex();
@@ -161,11 +175,13 @@ export function createStore(backend, { makeId = newId, now = () => new Date().to
     } catch {
       return { ok: false, reason: 'voll' };
     }
-    const list = readIndex();
+    const state = readIndexState();
+    const list = state.list;
     const i = list.findIndex((e) => e.id === stored.id);
     const entry = { id: stored.id, name: stored.name };
     if (i >= 0) list[i] = entry;
     else list.push(entry);
+    backupCorrupt(state);
     try {
       be.setItem(INDEX_KEY, JSON.stringify(list));
     } catch {
@@ -193,7 +209,9 @@ export function createStore(backend, { makeId = newId, now = () => new Date().to
 
   function remove(id) {
     try {
-      be.setItem(INDEX_KEY, JSON.stringify(readIndex().filter((e) => e.id !== id)));
+      const state = readIndexState();
+      backupCorrupt(state);
+      be.setItem(INDEX_KEY, JSON.stringify(state.list.filter((e) => e.id !== id)));
       be.removeItem(profileKey(id));
     } catch {
       // Entfernen schlaegt still fehl; die App bleibt benutzbar.
