@@ -178,7 +178,7 @@ export function fehlerFinden(level, rng) {
       `Zeile ${f.wrong + 1} ist falsch. ${f.why} Richtig: ${f.right}.`,
     ],
     explain: f.explain,
-    meta: { a: f.a, b: f.b, k: f.k, op: f.op },
+    meta: { a: f.a, b: f.b, k: f.k, op: f.op, isReasoning: true },
   });
 }
 
@@ -289,6 +289,6 @@ export function regelEntdecken(level, rng) {
       r.solution,
     ],
     explain: r.explain,
-    meta: r.meta,
+    meta: { ...r.meta, isReasoning: true },
   });
 }

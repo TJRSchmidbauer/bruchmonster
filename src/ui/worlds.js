@@ -64,3 +64,19 @@ const MOTIFS = {
 export function motif(key) {
   return h('svg', { class: 'tile__motif', viewBox: '0 0 100 90', 'aria-hidden': 'true', focusable: 'false' }, MOTIFS[key]());
 }
+
+export const LEVELS = [
+  { n: 1, name: 'Aufwärmen' },
+  { n: 2, name: 'Knobeln' },
+  { n: 3, name: 'Monsterschwer' },
+];
+
+// 0 bis 3 Sterne je Aufgabenart: >= 3 richtig = 1, >= 10 = 2, >= 25 mit >= 80 % = 3.
+export function kindStars(m) {
+  const right = m?.right ?? 0;
+  const total = right + (m?.wrong ?? 0);
+  if (right >= 25 && right / total >= 0.8) return 3;
+  if (right >= 10) return 2;
+  if (right >= 3) return 1;
+  return 0;
+}
