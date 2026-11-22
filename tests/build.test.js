@@ -24,6 +24,9 @@ test('gebaute Datei fragt nichts im Netz an', async () => {
     'http://www.w3.org/2000/svg',
     'http://www.w3.org/1999/xlink',
     'http://www.w3.org/XML/1998/namespace',
+    // Nur anklickbare Verweise im Fuss der Startseite (Namensnennung); nichts wird automatisch geladen.
+    'https://creativecommons.org/licenses/by-nc/4.0/deed.de',
+    'https://schmidbauer.io',
   ]);
   const urls = html.match(/https?:\/\/[^\s"'<>)\\]+/g) ?? [];
   const bad = urls.filter((u) => !allowed.has(u));
