@@ -27,7 +27,7 @@ export function resolveColor(id) {
 
 export const STAGE_NAMES = ['Ei mit Augen', 'Baby-Monster', 'Monsterkind', 'Monster-Teen', 'Großes Monster'];
 
-const PEAR = 'M38 166 Q14 108 52 62 Q72 28 100 28 Q128 28 148 62 Q186 108 162 166 Q100 184 38 166 Z';
+export const PEAR = 'M38 166 Q14 108 52 62 Q72 28 100 28 Q128 28 148 62 Q186 108 162 166 Q100 184 38 166 Z';
 const EGG = 'M100 40 Q160 40 166 112 Q170 176 100 178 Q30 176 34 112 Q40 40 100 40 Z';
 const PIVOT = [100, 184];
 const mirror = (x) => 200 - x;

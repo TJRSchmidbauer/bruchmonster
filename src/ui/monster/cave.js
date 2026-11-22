@@ -3,10 +3,12 @@
 import { h } from '../dom.js';
 import { ITEMS, CAVE_MAX } from '../../core/economy.js';
 import { INK, st } from './art-kit.js';
+import { monsterSvg } from './art.js';
+import { monsterStage } from '../../core/economy.js';
 import { furnitureDraw } from './furniture-art.js';
 
 export const CAVE_W = 440;
-export const CAVE_H = 280;
+export const CAVE_H = 350;
 const WALL_BASE = 150;
 
 const FRONT_Y = 252;
@@ -53,6 +55,18 @@ function ordered(cave) {
   return entries.sort((a, b) => rank(a) - rank(b) || (rank(a) === 2 ? a.s.y - b.s.y : 0) || a.slot - b.slot);
 }
 
+// Das eigene Monster steht im Vordergrund und verdeckt keinen Platz.
+function home(p) {
+  if (!p) return null;
+  const m = monsterSvg({ stage: monsterStage(p.xp ?? 0), color: p.color, wearing: p.wearing ?? {}, mood: 'happy', cls: 'cave-monster' });
+  m.setAttribute('x', CAVE_W / 2 - 52);
+  m.setAttribute('y', 252);
+  m.setAttribute('width', 104);
+  m.setAttribute('height', 98);
+  m.setAttribute('pointer-events', 'none');
+  return m;
+}
+
 // opts.interactive: Plaetze als Zeiger-/Tastaturziele markieren (Handler haengt cave-tab.js an)
 export function caveSvg(p, opts = {}) {
   const cave = p?.cave ?? [];
@@ -69,7 +83,8 @@ export function caveSvg(p, opts = {}) {
       g.setAttribute('role', 'button');
       g.setAttribute('tabindex', '0');
       g.setAttribute('aria-label', `Platz ${e.slot + 1} von ${cave.length}: ${nameOf(e.id)}. Pfeiltasten verschieben, Entfernen räumt weg.`);
-      g.append(h('rect', { class: 'cave-hit', x: -56, y: wall ? -156 : -96, width: 112, height: wall ? 122 : 100, fill: 'transparent', stroke: 'none' }));
+      g.append(h('rect', { class: 'cave-hit', x: -56, y: wall ? -156 : -96, width: 112, height: wall ? 122 : 100, fill: 'transparent', stroke: 'none' }),
+        h('rect', { class: 'cave-ring', x: -56, y: wall ? -156 : -96, width: 112, height: wall ? 122 : 100, rx: 8, fill: 'none', stroke: 'none' }));
     }
     return g;
   });
@@ -82,5 +97,5 @@ export function caveSvg(p, opts = {}) {
   return h('svg', {
     class: 'cave-svg', viewBox: `0 0 ${CAVE_W} ${CAVE_H}`, role: 'img',
     'aria-label': cave.length === 0 ? 'Deine Höhle ist noch leer' : `Deine Höhle mit ${cave.length} Möbelstücken: ${cave.map(nameOf).join(', ')}`,
-  }, background(), empties, items);
+  }, background(), empties, items, home(p));
 }

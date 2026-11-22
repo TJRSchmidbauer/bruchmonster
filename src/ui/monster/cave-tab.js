@@ -129,11 +129,12 @@ export function renderCaveTab(ctx) {
   attachKeys(ctx, svg);
   svg.querySelectorAll('.cave-item').forEach((g) => g.setAttribute('data-key', `slot:${g.getAttribute('data-slot')}`));
   return h('div', { class: 'cavetab' },
-    h('div', { class: 'cave' }, svg),
-    h('p', { class: 'cave__count', role: 'status' }, ctx.message ?? `Platz belegt: ${p.cave.length} von 8`),
-    h('p', { class: 'small cave__hint' }, 'Zum Verschieben ein Möbelstück ziehen, oder mit Tab anwählen und die Pfeiltasten benutzen. Entfernen räumt es weg.'),
-    mine.length
+    h('div', { class: 'cavetab__scene' },
+      h('div', { class: 'cave' }, svg),
+      h('p', { class: 'cave__count', role: 'status' }, ctx.message ?? `Platz belegt: ${p.cave.length} von 8`),
+      h('p', { class: 'small cave__hint' }, 'Zum Verschieben ein Möbelstück ziehen, oder mit Tab anwählen und die Pfeiltasten benutzen. Entfernen räumt es weg.')),
+    h('div', { class: 'cavetab__list' }, mine.length
       ? h('ul', { class: 'wardrobe__list' }, mine.map((m) => furnitureRow(ctx, m)))
       : h('p', { class: 'wardrobe__empty' }, 'Noch keine Möbel. Der Shop hat welche.'),
-    open > 0 ? h('button', { type: 'button', class: 'linkbtn', onclick: () => ctx.goTab('shop', { cat: 'moebel' }) }, `Noch ${plural(open, 'Möbelstück', 'Möbelstücke')} im Shop`) : null);
+    open > 0 ? h('button', { type: 'button', class: 'linkbtn', onclick: () => ctx.goTab('shop', { cat: 'moebel' }) }, `Noch ${plural(open, 'Möbelstück', 'Möbelstücke')} im Shop`) : null));
 }

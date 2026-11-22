@@ -85,10 +85,12 @@
 .wardrobe__pos { font-family: var(--font-text); font-weight: 400; font-size: var(--fs-s); }
 .wardrobe__actions { display: flex; gap: var(--sp-2); }
 .wardrobe__actions .btn { flex: 1 1 auto; }
-.wardrobe__actions .btn:nth-child(n+2) { flex: 0 0 52px; padding: 0; }
+.wardrobe__actions .btn:nth-child(n+2) { flex: 0 0 48px; min-width: 48px; padding: 0; }
 @media (min-width: 720px) {
-  .shopgrid { display: grid; grid-template-columns: 1fr 1fr; }
+  .shopgrid, .wardrobe__list { display: grid; grid-template-columns: 1fr 1fr; }
 }
+.cavetab .wardrobe__actions .btn:first-child { flex: 0 0 auto; width: auto; padding: 0 var(--sp-3); }
+.cavetab__scene, .cavetab__list { display: flex; flex-direction: column; gap: var(--sp-3); min-width: 0; }
 
 /* Shop-Kategorien */
 .cats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-2); }
@@ -135,7 +137,8 @@
 .cave__hint { margin: 0; }
 .cave-item { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
 .cave-item:active { cursor: grabbing; }
-.cave-item:focus-visible .cave-hit { fill: rgba(255, 212, 59, 0.4); stroke: var(--ink); stroke-width: 3; stroke-dasharray: 8 5; }
+.cave-item:focus-visible .cave-hit { fill: rgba(255, 212, 59, 0.35); stroke: var(--lemon); stroke-width: 9; }
+.cave-item:focus-visible .cave-ring { stroke: var(--ink); stroke-width: 3; }
 .cave-item:focus-visible { box-shadow: none; }
 
 /* Sammelkarten */
@@ -181,6 +184,11 @@
 @keyframes overlay-pop { from { transform: scale(0.6); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes spark { 0%, 100% { transform: scale(0.6) rotate(0); opacity: 0.6; } 50% { transform: scale(1.3) rotate(25deg); opacity: 1; } }
 
+@media (min-width: 900px) {
+  .cavetab { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); gap: var(--sp-5); align-items: start; }
+  .cavetab__scene { position: sticky; top: 80px; }
+  .cavetab .wardrobe__list { grid-template-columns: 1fr; }
+}
 @media (min-width: 900px) {
   .monstertab { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: var(--sp-5) var(--sp-6); align-items: start; }
   .monstertab__hero { grid-row: span 3; position: sticky; top: 80px; }
