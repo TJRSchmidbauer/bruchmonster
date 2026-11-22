@@ -471,6 +471,7 @@ h1:focus { outline: none; box-shadow: none; }
 .experiment .card__title { margin-bottom: 0; }
 .experiment__play { display: flex; flex-direction: column; gap: var(--sp-3); }
 .experiment__stage { display: block; }
+.experiment__narrow { max-width: 100%; margin-top: var(--sp-2); }
 .experiment__caption { font-size: var(--fs-m); min-height: 3em; max-width: 60ch; }
 .experiment__controls { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
 .experiment__controls .btn { flex: 1 1 140px; min-height: 52px; }

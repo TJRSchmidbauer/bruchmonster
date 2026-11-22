@@ -1,7 +1,7 @@
 // Welt-Bildschirm: Stufenwahl, Aufgabenarten mit Sternen, dann Runden zu je 5 Aufgaben.
 import { h, button } from '../dom.js';
 import { go } from '../router.js';
-import { KINDS } from '../../tasks/generators.js';
+import { KINDS, pickTask } from '../../tasks/generators.js';
 import { worldByKey, KIND_LABELS, LEVELS, kindStars } from '../worlds.js';
 import { createRunner } from '../runner.js';
 import { createTaskView } from './taskview.js';
@@ -95,7 +95,7 @@ export function renderWorld(root, params, app) {
     levelMemory[w.key] = level;
     session = { size: ROUND, done: 0, coins: 0, right: 0 };
     runner = createRunner({
-      profile: app.profile, kind: k, level, rng: app.rng, today: app.today(),
+      profile: app.profile, kind: k, level, rng: app.rng, today: app.today(), pickTask,
       onUpdate: (p, ev) => {
         app.setProfile(p);
         if (ev?.card) app.toast(`Neue Sammelkarte: ${ev.card.name}`);

@@ -11,10 +11,11 @@ before(async () => {
   ({ EXPERIMENTS, experimentView } = await import('../src/ui/experiments.js'));
 });
 
-const KINDS = ['platzieren', 'vergleichen', 'dazwischen', 'erweitern', 'kuerzen', 'addieren', 'bruchteil-vom-bruchteil'];
+const KINDS = ['platzieren', 'vergleichen', 'dazwischen', 'erweitern', 'kuerzen', 'addieren', 'bruchteil-vom-bruchteil',
+  'schaetzen', 'darstellen', 'subtrahieren', 'anteil-von-groesse', 'rezept', 'teilen-durch-nat', 'fehler-finden', 'regel-entdecken'];
 const click = (el) => el.dispatchEvent(new win.Event('click', { bubbles: true }));
 
-test('Experimente: alle sieben vorhanden, Frage hat genau eine richtige Option, Regel nicht leer', () => {
+test('Experimente: alle 15 vorhanden, Frage hat genau eine richtige Option, Regel nicht leer', () => {
   for (const k of KINDS) {
     const e = EXPERIMENTS[k];
     assert.ok(e, k);
@@ -22,6 +23,7 @@ test('Experimente: alle sieben vorhanden, Frage hat genau eine richtige Option, 
     assert.ok(e.question.options.length >= 2, k);
     assert.ok(Number.isInteger(e.question.correct) && e.question.correct >= 0 && e.question.correct < e.question.options.length, k);
     assert.ok(e.rule.trim().length > 10, k);
+    assert.equal(new Set(e.question.options).size, e.question.options.length, `${k}: doppelte Optionen`);
     const el = e.build(() => {});
     assert.ok(el.querySelector('svg'), `${k}: Spielwiese ohne Zeichnung`);
   }
