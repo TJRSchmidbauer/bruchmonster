@@ -4,6 +4,7 @@ import * as strahl from './gen/strahl.js';
 import * as streifen from './gen/streifen.js';
 import * as alltag from './gen/alltag.js';
 import * as detektiv from './gen/detektiv.js';
+import { shuffle } from '../core/rng.js';
 import { HANDWRITTEN } from './handwritten.js';
 
 export { KINDS, checkAnswer };
@@ -54,5 +55,13 @@ export function pickTask(kind, level, rng) {
   lastId[key] = t.id;
   seen.push(t.id);
   if (seen.length > Math.min(HW_MEMORY, pool.length - 1)) seen.shift();
-  return structuredClone(t);
+  const copy = structuredClone(t);
+  if (copy.widget.type === 'choice') {
+    // Optionen mischen und den Index der richtigen Antwort nachfuehren.
+    const options = copy.widget.data.options;
+    const right = options[copy.answer.value];
+    copy.widget.data.options = shuffle(rng, options);
+    copy.answer.value = copy.widget.data.options.indexOf(right);
+  }
+  return copy;
 }

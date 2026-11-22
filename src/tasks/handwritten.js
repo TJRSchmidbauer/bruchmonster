@@ -101,10 +101,10 @@ const ALLTAG = [
     answer: [3, 2],
     hints: [
       'Ein Bruchteil von 5 km kann ein Bruch sein. Rechne erst 3/10 mal 5.',
-      'Zeichne einen Zahlenstrahl von 0 bis 5 km. Die Hälfte wären 2 1/2 km. Du bist noch nicht ganz bei der Hälfte.',
+      'Stell dir die 5 km als Streifen mit 10 gleichen Stücken vor. Du bist 3 Stücke gelaufen, also weniger als die Hälfte der Strecke.',
       '3/10 von 5 = 3 · 5 / 10 = 15/10 = 3/2. Das sind 1 1/2 km.',
     ],
-    explain: L([F([3, 2])]),
+    explain: S([{ parts: 10, filled: 3 }]),
     meta: { a: F([3, 10]), quantity: q(5, 'km'), op: 'mul' },
   }),
   anteil(8, 2, {
@@ -176,7 +176,7 @@ const ALLTAG = [
     meta: { a: F([1, 4]), b: F([3, 1]), k: 6, op: 'mul' },
   }),
   rezept(3, 1, {
-    prompt: 'Für 12 Muffins braucht man 1/2 kg Mehl. Du backst nur 6 Muffins, den Rest bäckt das Monster allein. Wie viel kg Mehl?',
+    prompt: 'Für 12 Muffins braucht man 1/2 kg Mehl. Du backst nur 6 Muffins, die anderen 6 backt das Monster allein. Wie viel kg Mehl?',
     answer: [1, 4],
     hints: [
       'Du backst weniger Muffins. Brauchst du dann mehr oder weniger Mehl?',
@@ -202,7 +202,7 @@ const ALLTAG = [
     answer: [5, 6],
     hints: [
       'Rechne erst auf einen Becher herunter. Dann auf fünf Becher hoch.',
-      'Teile die halbe Liter in 3 gleiche Stücke. Wie heißt der Bruchteil eines Bechers?',
+      'Teile den halben Liter in 3 gleiche Stücke. Wie heißt der Bruchteil eines Bechers?',
       'Pro Becher: 1/2 : 3 = 1/6 Liter. Für 5 Becher: 5 · 1/6 = 5/6 Liter.',
     ],
     explain: S([{ parts: 2, filled: 1 }, { parts: 6, filled: 1 }, { parts: 6, filled: 5 }]),
@@ -213,7 +213,7 @@ const ALLTAG = [
     answer: [5, 8],
     hints: [
       'Eine Person isst gleich viel wie vorher. Wie viel braucht eine einzelne Person?',
-      'Teile die halbe kg in 4 gleiche Portionen. Dann nimmst du 5 Portionen.',
+      'Teile das halbe Kilo in 4 gleiche Portionen. Dann nimmst du 5 Portionen.',
       'Pro Person: 1/2 : 4 = 1/8 kg. Für 5 Personen: 5 · 1/8 = 5/8 kg.',
     ],
     explain: S([{ parts: 2, filled: 1 }, { parts: 8, filled: 1 }, { parts: 8, filled: 5 }]),
@@ -508,7 +508,7 @@ const DETEKTIV = [
     options: [
       'Weil man die Nenner später sowieso zusammenzählt, und das geht nur, wenn sie gleich sind.',
       'Man kann nur gleich große Stücke zusammenzählen. Drittel und Fünftel sind verschieden groß.',
-      'Damit die Brüche schöner aussehen. Das Ergebnis wäre sonst genauso richtig.',
+      'Weil man beim Addieren erst die Nenner vergleicht. Wer größere Nenner hat, bekommt den größeren Anteil.',
     ],
     correct: 1,
     hints: [
@@ -554,7 +554,7 @@ const DETEKTIV = [
   regel(6, 2, {
     prompt: 'Warum macht man Brüche zum Vergleichen gleichnamig?',
     options: [
-      'Damit die Zähler gleich werden. Dann entscheidet der größere Nenner.',
+      'Damit die Zähler gleich werden. Dann ist der Bruch mit dem größeren Nenner der größere.',
       'Damit die Stücke gleich groß sind. Dann gewinnt der Bruch mit dem größeren Zähler.',
       'Weil man dann Zähler und Nenner addieren darf.',
     ],
@@ -586,7 +586,7 @@ const DETEKTIV = [
   regel(8, 3, {
     prompt: 'Du kürzt 4/6 und teilst nur den Nenner durch 2: 4/3. Warum ist das falsch?',
     options: [
-      'Weil 4/3 keine schöne Zahl ist, sondern mehr als ein Ganzes.',
+      'Weil man beim Kürzen den Zähler und den Nenner immer um 2 kleiner machen muss.',
       'Wer nur den Nenner teilt, ändert die Stückgröße, aber nicht die Anzahl. Der Wert ändert sich. Zähler und Nenner müssen beide geteilt werden.',
       'Weil man beim Kürzen nur den Zähler teilen darf.',
     ],

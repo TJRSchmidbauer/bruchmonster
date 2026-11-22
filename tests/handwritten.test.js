@@ -124,3 +124,19 @@ test('pickTask: andere Arten wie generate, deterministisch, Kopien statt gemeins
   t.hints.length = 0;
   for (const h of HANDWRITTEN) assert.equal(h.hints.length, 3);
 });
+
+test('pickTask: Optionen handgeschriebener Auswahlaufgaben werden gemischt, Antwort bleibt richtig', () => {
+  for (const level of [1, 2, 3]) {
+    const rng = makeRng(11);
+    const idx = new Set();
+    for (let i = 0; i < 300; i++) {
+      const t = pickTask('regel-entdecken', level, rng);
+      if (!t.id.startsWith('hw-')) continue;
+      assert.equal(checkAnswer(t, t.answer.value).correct, true, t.id);
+      const orig = HANDWRITTEN.find((h) => h.id === t.id);
+      assert.equal(t.widget.data.options[t.answer.value], orig.widget.data.options[orig.answer.value], t.id);
+      idx.add(t.answer.value);
+    }
+    assert.ok(idx.size >= 2, `L${level}: richtiger Index immer gleich`);
+  }
+});
