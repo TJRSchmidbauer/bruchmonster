@@ -1,5 +1,6 @@
 node_modules
 dist/*
 !dist/bruchmonster.html
+!dist/bruchmonster.html.sha256
 .superpowers
 shots/

@@ -1,6 +1,8 @@
 // Profile und Speicher: Anlegen, Laden, Speichern, Export/Import.
 // Reine Logik ohne UI. Standard-Backend ist localStorage, Fallback ist der Speicher im Arbeitsspeicher.
 
+import { seal, unseal } from './seal.js';
+
 const INDEX_KEY = 'bruchmonster:profiles';
 const INDEX_BAK_KEY = 'bruchmonster:profiles.bak';
 const PROFILE_PREFIX = 'bruchmonster:profile:';
@@ -11,11 +13,16 @@ export function newId() {
   return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 }
 
+// Steuerzeichen und Zeichen, die die Schreibrichtung umkehren oder Text verstecken, haben in Namen nichts verloren.
+// Dazu zaehlen auch unsichtbare Zeichen (Nullbreiten-Leerzeichen, Fueller), mit denen sich ein "leerer" Name tarnen liesse.
+const BAD_CHARS = /[\p{Cc}\u00AD\u061C\u115F\u1160\u180E\u200B\u200E\u200F\u202A-\u202E\u2060-\u2064\u2066-\u2069\u2800\u3164\uFEFF\uFFA0\u2028\u2029]/gu;
+const VISIBLE = /[\p{L}\p{N}\p{P}\p{S}]/u;
+
 // Name trimmen, auf 20 Zeichen kuerzen, leer ergibt "Monsterfreund".
 function normalizeName(name) {
   if (typeof name !== 'string') return DEFAULT_NAME;
-  const t = name.trim();
-  if (t === '') return DEFAULT_NAME;
+  const t = name.replace(BAD_CHARS, '').trim();
+  if (t === '' || !VISIBLE.test(t)) return DEFAULT_NAME;
   return Array.from(t).slice(0, 20).join('');
 }
 
@@ -42,6 +49,17 @@ export function defaultProfile(name, id = newId(), createdAt = new Date().toISOS
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const isNonNeg = (v) => typeof v === 'number' && Number.isFinite(v) && v >= 0;
 
+// Grenzen fuer alles, was aus Datei oder Speicher kommt: nichts darf riesig oder seltsam sein.
+const MAX_NUM = 1_000_000_000;
+const MAX_PROFILES = 100;
+const MAX_INDEX_CHARS = 20_000;
+const MAX_LIST = 300;
+const MAX_MAP = 200;
+const isId = (v) => typeof v === 'string' && /^[A-Za-z0-9_.:-]{1,48}$/.test(v);
+const isDate = (v) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
+const num = (v) => Math.min(Math.floor(v), MAX_NUM);
+const capEntries = (o) => Object.entries(o).slice(0, MAX_MAP);
+
 // Repariert jedes Feld einzeln: Fehlende oder kaputte Felder kommen aus den Standardwerten,
 // kaputte Listeneintraege werden verworfen. Nur ein Nicht-Objekt ergibt null.
 function fillProfile(raw, id, createdAt) {
@@ -49,29 +67,31 @@ function fillProfile(raw, id, createdAt) {
   const out = defaultProfile('', id, createdAt);
 
   if (typeof raw.name === 'string') out.name = normalizeName(raw.name);
-  for (const k of ['coins', 'xp']) if (isNonNeg(raw[k])) out[k] = raw[k];
+  for (const k of ['coins', 'xp']) if (isNonNeg(raw[k])) out[k] = num(raw[k]);
   for (const k of ['owned', 'cave', 'cards', 'seen']) {
-    if (Array.isArray(raw[k])) out[k] = raw[k].filter((x) => typeof x === 'string');
+    if (Array.isArray(raw[k])) out[k] = raw[k].filter(isId).slice(0, MAX_LIST);
   }
   if (isObj(raw.wearing)) {
-    out.wearing = Object.fromEntries(Object.entries(raw.wearing).filter(([, v]) => typeof v === 'string'));
+    out.wearing = Object.fromEntries(capEntries(raw.wearing).filter(([k, v]) => isId(k) && isId(v)));
   }
   if (isObj(raw.mastery)) {
-    out.mastery = Object.fromEntries(Object.entries(raw.mastery).filter(([, m]) =>
-      isObj(m) && isNonNeg(m.right) && isNonNeg(m.wrong) && isNonNeg(m.last)));
+    out.mastery = Object.fromEntries(capEntries(raw.mastery).filter(([k, m]) =>
+      isId(k) && isObj(m) && isNonNeg(m.right) && isNonNeg(m.wrong) && isNonNeg(m.last))
+      .map(([k, m]) => [k, { right: num(m.right), wrong: num(m.wrong), last: m.last }]));
   }
   if (isObj(raw.daily)) {
-    out.daily = Object.fromEntries(Object.entries(raw.daily).filter(([, d]) =>
-      isObj(d) && typeof d.date === 'string' && isNonNeg(d.coins)));
+    out.daily = Object.fromEntries(capEntries(raw.daily).filter(([k, d]) =>
+      isId(k) && isObj(d) && isDate(d.date) && isNonNeg(d.coins))
+      .map(([k, d]) => [k, { date: d.date, coins: num(d.coins) }]));
   }
   if (isObj(raw.streak)) {
     out.streak = {
-      days: isNonNeg(raw.streak.days) ? raw.streak.days : 0,
-      lastDate: typeof raw.streak.lastDate === 'string' ? raw.streak.lastDate : '',
+      days: isNonNeg(raw.streak.days) ? num(raw.streak.days) : 0,
+      lastDate: isDate(raw.streak.lastDate) ? raw.streak.lastDate : '',
     };
   }
-  if (typeof raw.color === 'string') out.color = raw.color;
-  if (typeof raw.createdAt === 'string') out.createdAt = raw.createdAt;
+  if (isId(raw.color)) out.color = raw.color;
+  if (typeof raw.createdAt === 'string' && raw.createdAt.length <= 40) out.createdAt = raw.createdAt;
   out.id = id;
   out.version = 1;
   return out;
@@ -109,12 +129,14 @@ export function createStore(backend, { makeId = newId, now = () => new Date().to
     try {
       raw = be.getItem(INDEX_KEY);
       if (raw == null) return { list: [], corruptRaw: null };
+      if (raw.length > MAX_INDEX_CHARS) throw new Error('zu gross');
       const arr = JSON.parse(raw);
       if (!Array.isArray(arr)) throw new Error('kein Array');
       return {
         list: arr
-          .filter((e) => isObj(e) && typeof e.id === 'string' && typeof e.name === 'string')
-          .map((e) => ({ id: e.id, name: e.name })),
+          .filter((e) => isObj(e) && isId(e.id) && typeof e.name === 'string')
+          .slice(0, MAX_PROFILES)
+          .map((e) => ({ id: e.id, name: normalizeName(e.name) })),
         corruptRaw: null,
       };
     } catch {
@@ -130,7 +152,8 @@ export function createStore(backend, { makeId = newId, now = () => new Date().to
         const k = be.key(i);
         if (typeof k !== 'string' || !k.startsWith(PROFILE_PREFIX)) continue;
         const id = k.slice(PROFILE_PREFIX.length);
-        const p = fillProfile(JSON.parse(be.getItem(k)), id, now());
+        const opened = unseal(be.getItem(k));
+        const p = opened.ok && opened.value?.id === id ? fillProfile(opened.value, id, now()) : null;
         if (p) list.push({ id, name: p.name });
       }
     } catch {
@@ -159,7 +182,9 @@ export function createStore(backend, { makeId = newId, now = () => new Date().to
     try {
       const raw = be.getItem(profileKey(id));
       if (raw == null) return null;
-      return fillProfile(JSON.parse(raw), id, now());
+      const opened = unseal(raw);
+      // Das Siegel gehoert zu genau diesem Profil: ein kopierter Eintrag unter anderer id wird nicht geladen.
+      return opened.ok && opened.value?.id === id ? fillProfile(opened.value, id, now()) : null;
     } catch {
       return null;
     }
@@ -188,7 +213,7 @@ export function createStore(backend, { makeId = newId, now = () => new Date().to
       return { ok: false, reason: 'voll' };
     }
     try {
-      be.setItem(profileKey(stored.id), JSON.stringify(stored));
+      be.setItem(profileKey(stored.id), seal(stored));
       return { ok: true };
     } catch {
       try {
@@ -221,29 +246,19 @@ export function createStore(backend, { makeId = newId, now = () => new Date().to
   return { persistent, listProfiles, createProfile, load, save, remove };
 }
 
+// Export: ein Siegel (verschluesselt und mit Pruefsumme), das sich nicht von Hand aendern laesst.
 export function exportProfile(p) {
-  return JSON.stringify(
-    { format: 'bruchmonster', version: 1, exportedAt: new Date().toISOString(), profile: p },
-    null,
-    2,
-  );
+  return seal({ profile: p, exportedAt: new Date().toISOString() });
 }
 
 // Liest eine Export-Datei. Das Ergebnis bekommt immer eine neue id und ist noch nicht gespeichert.
+// Gründe: kein-json, falsches-format (auch das alte Klartext-Format), verfaelscht, zu-gross, beschaedigt.
 export function importProfile(text, makeId = newId) {
   const fail = (reason) => ({ ok: false, reason });
-  if (typeof text !== 'string') return fail('kein-json');
-  let doc;
-  try {
-    doc = JSON.parse(text);
-  } catch {
-    return fail('kein-json');
-  }
-  if (!isObj(doc) || doc.format !== 'bruchmonster' || !isObj(doc.profile)) return fail('falsches-format');
-  const v = doc.version ?? 1;
-  if (typeof v !== 'number' || !Number.isInteger(v) || v < 1) return fail('beschaedigt');
-  if (v > 1) return fail('zu-neu');
-  const profile = fillProfile(doc.profile, makeId(), new Date().toISOString());
+  const opened = unseal(text);
+  if (!opened.ok) return fail(opened.reason);
+  if (!isObj(opened.value) || !isObj(opened.value.profile)) return fail('beschaedigt');
+  const profile = fillProfile(opened.value.profile, makeId(), new Date().toISOString());
   if (!profile) return fail('beschaedigt');
   return { ok: true, profile };
 }

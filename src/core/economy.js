@@ -77,7 +77,9 @@ const ITEM_LIST = [
 export const ITEMS = Object.freeze(ITEM_LIST.map((it) => Object.freeze(it)));
 
 const byId = (id) => ITEMS.find((it) => it.id === id) ?? null;
-const dailyKey = (today, kind) => `${today}|${kind}`;
+// Das Trennzeichen muss beim Speichern erlaubt sein (siehe isId in storage.js), sonst geht das Tageslimit beim Laden verloren.
+const dailyKey = (day, kind) => `${day}:${kind}`;
+const CLOCK_TOLERANCE_DAYS = 3;
 
 function daysBetween(a, b) {
   return Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / DAY_MS);
@@ -112,16 +114,23 @@ export function applyResult(p, task, r, today, nowMs = Date.now()) {
     },
   };
 
-  // Alte Tage werden entfernt, es bleibt nur der heutige Stand.
+  // Es zaehlt der juengste gespeicherte Tag, der hoechstens ein paar Tage in der Zukunft liegt: Wer die Uhr
+  // zurueckstellt, bekommt kein neues Limit. Weiter entfernte Zukunftstage (falsch gestellte Uhr) werden ignoriert.
+  // Aeltere Tage werden entfernt.
+  let day = today;
+  for (const v of Object.values(p.daily)) {
+    const ahead = daysBetween(today, v.date);
+    if (ahead >= 0 && ahead <= CLOCK_TOLERANCE_DAYS && v.date > day) day = v.date;
+  }
   const daily = {};
-  for (const [k, v] of Object.entries(p.daily)) if (v.date === today) daily[k] = { ...v };
+  for (const [k, v] of Object.entries(p.daily)) if (v.date === day) daily[k] = { ...v };
 
-  const key = dailyKey(today, task.kind);
+  const key = dailyKey(day, task.kind);
   const used = daily[key]?.coins ?? 0;
   const want = correct ? reward({ level: task.level, hintsUsed, streak, explained }) : 0;
   const coins = Math.min(want, Math.max(0, DAILY_LIMIT - used));
   const capped = coins < want;
-  if (coins > 0) daily[key] = { date: today, coins: used + coins };
+  if (coins > 0) daily[key] = { date: day, coins: used + coins };
 
   return {
     profile: { ...p, coins: p.coins + coins, mastery, daily },

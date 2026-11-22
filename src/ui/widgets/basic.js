@@ -7,7 +7,7 @@ import { richText } from '../richtext.js';
 export function inputWidget(onSubmit) {
   const id = `ans-${Math.random().toString(36).slice(2, 7)}`;
   const field = h('input', {
-    id, class: 'field answer__field', type: 'text', inputmode: 'text', autocomplete: 'off',
+    id, class: 'field answer__field', type: 'text', maxlength: 40, inputmode: 'text', autocomplete: 'off',
     autocapitalize: 'none', spellcheck: 'false', enterkeyhint: 'done', 'aria-describedby': `${id}-help`,
     onkeydown: (e) => {
       if (e.key === 'Enter') {

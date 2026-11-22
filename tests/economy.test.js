@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { defaultProfile } from '../src/core/storage.js';
+import { defaultProfile, createStore } from '../src/core/storage.js';
 import { makeRng } from '../src/core/rng.js';
 import {
   ITEMS, DAILY_LIMIT, CAVE_MAX,
@@ -120,7 +120,7 @@ test('applyResult: Serie und Begruendung kommen aus r', () => {
 });
 
 test('applyResult: Tageslimit je Art greift, dann 0 und capped', () => {
-  const p = profile({ daily: { [`${TODAY}|kuerzen`]: { date: TODAY, coins: DAILY_LIMIT } } });
+  const p = profile({ daily: { [`${TODAY}:kuerzen`]: { date: TODAY, coins: DAILY_LIMIT } } });
   const res = applyResult(p, task('kuerzen', 3), correct(), TODAY, NOW);
   assert.equal(res.coins, 0);
   assert.equal(res.capped, true);
@@ -128,27 +128,27 @@ test('applyResult: Tageslimit je Art greift, dann 0 und capped', () => {
 });
 
 test('applyResult: Teilbetrag bis zum Limit, Rest verfaellt', () => {
-  const p = profile({ coins: 0, daily: { [`${TODAY}|kuerzen`]: { date: TODAY, coins: 36 } } });
+  const p = profile({ coins: 0, daily: { [`${TODAY}:kuerzen`]: { date: TODAY, coins: 36 } } });
   const res = applyResult(p, task('kuerzen', 3), correct(), TODAY, NOW);
   assert.equal(res.coins, 4);
   assert.equal(res.capped, true);
-  assert.deepEqual(res.profile.daily[`${TODAY}|kuerzen`], { date: TODAY, coins: 40 });
+  assert.deepEqual(res.profile.daily[`${TODAY}:kuerzen`], { date: TODAY, coins: 40 });
 });
 
 test('applyResult: Limit gilt je Art, nicht insgesamt', () => {
-  const p = profile({ daily: { [`${TODAY}|kuerzen`]: { date: TODAY, coins: DAILY_LIMIT } } });
+  const p = profile({ daily: { [`${TODAY}:kuerzen`]: { date: TODAY, coins: DAILY_LIMIT } } });
   const res = applyResult(p, task('addieren', 3), correct(), TODAY, NOW);
   assert.equal(res.coins, 5);
   assert.equal(res.capped, false);
 });
 
 test('applyResult: am naechsten Tag wieder volles Limit, alte Eintraege werden entfernt', () => {
-  const p = profile({ daily: { [`2026-11-21|kuerzen`]: { date: '2026-11-21', coins: DAILY_LIMIT } } });
+  const p = profile({ daily: { [`2026-11-21:kuerzen`]: { date: '2026-11-21', coins: DAILY_LIMIT } } });
   const res = applyResult(p, task('kuerzen', 3), correct(), TODAY, NOW);
   assert.equal(res.coins, 5);
   assert.equal(res.capped, false);
-  assert.equal(res.profile.daily['2026-11-21|kuerzen'], undefined);
-  assert.deepEqual(res.profile.daily[`${TODAY}|kuerzen`], { date: TODAY, coins: 5 });
+  assert.equal(res.profile.daily['2026-11-21:kuerzen'], undefined);
+  assert.deepEqual(res.profile.daily[`${TODAY}:kuerzen`], { date: TODAY, coins: 5 });
 });
 
 test('applyResult: nowMs faellt auf Date.now() zurueck', () => {
@@ -162,7 +162,7 @@ test('applyResult: Eingabe wird nicht veraendert', () => {
   const p = profile({
     coins: 10,
     mastery: { kuerzen: { right: 2, wrong: 1, last: 5 } },
-    daily: { [`${TODAY}|kuerzen`]: { date: TODAY, coins: 6 } },
+    daily: { [`${TODAY}:kuerzen`]: { date: TODAY, coins: 6 } },
   });
   const snapshot = structuredClone(p);
   const t = task();
@@ -402,4 +402,43 @@ test('reward: negative Hinweise und unbekannte Stufe stürzen nicht ab', () => {
   assert.equal(reward({ level: 1, hintsUsed: -5 }), 2);
   assert.equal(reward({ level: 99, hintsUsed: 0 }), 2);
   assert.equal(reward({ level: undefined }), 2);
+});
+
+// ---- Tageslimit: Regressionstests (Pruefbericht: Limit ging beim Speichern verloren, Uhr zurueck setzte es zurueck) ----
+const memoryStore = () => {
+  const data = new Map();
+  return createStore({ getItem: (k) => data.get(k) ?? null, setItem: (k, v) => { data.set(k, String(v)); }, removeItem: (k) => { data.delete(k); } });
+};
+const kuerzTask = { kind: 'kuerzen', level: 3 };
+const right = { correct: true, hintsUsed: 0, streak: 0, explained: false };
+
+test('Tageslimit uebersteht Speichern und Laden (Ruecklaeufer: F5 setzte das Limit zurueck)', () => {
+  const store = memoryStore();
+  let p = store.createProfile('Mia').profile;
+  let got = 0;
+  for (let i = 0; i < 60; i++) {
+    const res = applyResult(p, kuerzTask, right, TODAY, NOW);
+    got += res.coins;
+    assert.deepEqual(store.save(res.profile), { ok: true });
+    p = store.load(p.id); // wie nach einem Neuladen der Seite
+  }
+  assert.equal(got, DAILY_LIMIT);
+  assert.equal(p.coins, DAILY_LIMIT);
+});
+
+test('Uhr einen Tag zurueckstellen gibt kein neues Limit', () => {
+  const day2 = '2026-11-23';
+  let p = profile();
+  for (let i = 0; i < 30; i++) p = applyResult(p, kuerzTask, right, day2, NOW).profile;
+  assert.equal(p.coins, DAILY_LIMIT);
+  const back = applyResult(p, kuerzTask, right, TODAY, NOW);
+  assert.equal(back.coins, 0);
+  assert.equal(back.capped, true);
+});
+
+test('Uhr weit in die Zukunft (Fehlstellung) sperrt das Limit nicht dauerhaft', () => {
+  let p = profile();
+  for (let i = 0; i < 30; i++) p = applyResult(p, kuerzTask, right, '2027-11-22', NOW).profile;
+  const res = applyResult(p, kuerzTask, right, TODAY, NOW);
+  assert.ok(res.coins > 0, 'heute gibt es wieder Muenzen');
 });

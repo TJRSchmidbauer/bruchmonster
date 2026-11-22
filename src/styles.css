@@ -526,4 +526,4 @@ h1:focus { outline: none; box-shadow: none; }
 
 .legal { margin-top: 1.5rem; text-align: center; opacity: 0.85; }
 .legal p { margin: 0.25rem 0; }
-.legal a { color: inherit; text-decoration: underline; }
+.legal a { color: inherit; text-decoration: underline; display: inline-block; min-height: 44px; line-height: 44px; padding: 0 0.4rem; }

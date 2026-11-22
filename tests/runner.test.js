@@ -260,7 +260,7 @@ test('pickTask kann ersetzt werden', () => {
 import { generate as pickReal } from '../src/tasks/generators.js';
 
 test('Tageslimit: capped wird durchgereicht', () => {
-  const p = profile({ daily: { [`${TODAY}|kuerzen`]: { date: TODAY, coins: 40 } } });
+  const p = profile({ daily: { [`${TODAY}:kuerzen`]: { date: TODAY, coins: 40 } } });
   const { r } = make('kuerzen', 1, { profile: p });
   const res = r.submit(rightInput(r.current()));
   assert.equal(res.coins, 0);

@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import {
   createStore, exportProfile, importProfile, defaultProfile,
 } from '../src/core/storage.js';
+import { seal } from '../src/core/seal.js';
+
+const wrap = (profile) => seal({ profile, exportedAt: '2026-11-22T00:00:00.000Z' });
 
 // Einfaches Speicher-Backend im Speicher, Schreibfehler per Schalter.
 function fakeBackend({ failWrite = false } = {}) {
@@ -66,8 +69,8 @@ test('Export und Import ergeben denselben Inhalt, aber eine neue id', () => {
   const text = exportProfile(p);
   const parsed = JSON.parse(text);
   assert.equal(parsed.format, 'bruchmonster');
-  assert.equal(parsed.version, 1);
-  assert.equal(typeof parsed.exportedAt, 'string');
+  assert.equal(parsed.version, 2);
+  for (const klartext of ['Mia', 'coins', 'hut', 'orig', 'exportedAt']) assert.ok(!text.includes(klartext), `Datei verraet ${klartext}`);
 
   const res = importProfile(text);
   assert.equal(res.ok, true);
@@ -89,14 +92,29 @@ test('importProfile meldet falsches-format ohne Kennung oder ohne profile', () =
   assert.deepEqual(importProfile('null'), { ok: false, reason: 'falsches-format' });
 });
 
-test('importProfile meldet zu-neu bei version 99', () => {
-  const text = JSON.stringify({ format: 'bruchmonster', version: 99, profile: { name: 'X' } });
-  assert.deepEqual(importProfile(text), { ok: false, reason: 'zu-neu' });
+test('importProfile nimmt keine Klartext-Datei an (altes Format, selbstgebaut), auch nicht mit Wunschwerten', () => {
+  const text = JSON.stringify({ format: 'bruchmonster', version: 1, profile: { name: 'Schummler', coins: 999999 } });
+  assert.deepEqual(importProfile(text), { ok: false, reason: 'falsches-format' });
+  const text2 = JSON.stringify({ format: 'bruchmonster', version: 2, profile: { name: 'Schummler', coins: 999999 } });
+  assert.deepEqual(importProfile(text2), { ok: false, reason: 'verfaelscht' });
 });
 
-test('importProfile ergaenzt fehlende Felder aus alter Datei mit Standardwerten', () => {
-  const text = JSON.stringify({ format: 'bruchmonster', version: 1, profile: { name: 'Alt', coins: 5 } });
-  const res = importProfile(text);
+test('importProfile erkennt jede Aenderung an der Datei als verfaelscht', () => {
+  const p = defaultProfile('Mia', 'o');
+  p.coins = 5;
+  const text = exportProfile(p);
+  const doc = JSON.parse(text);
+  const edited = JSON.stringify({ ...doc, d: doc.d.slice(0, 4) + (doc.d[4] === 'A' ? 'B' : 'A') + doc.d.slice(5) });
+  assert.deepEqual(importProfile(edited), { ok: false, reason: 'verfaelscht' });
+  assert.deepEqual(importProfile(text.replace('"m":"', '"m":"0')), { ok: false, reason: 'verfaelscht' });
+});
+
+test('importProfile lehnt riesige Dateien ab, ohne sie zu verarbeiten', () => {
+  assert.deepEqual(importProfile('x'.repeat(300_000)), { ok: false, reason: 'zu-gross' });
+});
+
+test('importProfile ergaenzt fehlende Felder mit Standardwerten', () => {
+  const res = importProfile(wrap({ name: 'Alt', coins: 5 }));
   assert.equal(res.ok, true);
   assert.equal(res.profile.name, 'Alt');
   assert.equal(res.profile.coins, 5);
@@ -107,8 +125,7 @@ test('importProfile ergaenzt fehlende Felder aus alter Datei mit Standardwerten'
   assert.equal(res.profile.version, 1);
 });
 
-test('importProfile repariert falsche Felder einzeln, solange format und version stimmen', () => {
-  const wrap = (profile) => JSON.stringify({ format: 'bruchmonster', version: 1, profile });
+test('importProfile repariert falsche Felder einzeln, solange das Siegel stimmt', () => {
   const prof = (over) => importProfile(wrap(over)).profile;
   assert.equal(importProfile(wrap({ coins: -1 })).ok, true);
   assert.equal(prof({ coins: -1 }).coins, 0);
@@ -126,17 +143,47 @@ test('importProfile repariert falsche Felder einzeln, solange format und version
   assert.equal(prof({ coins: NaN, color: 7 }).color, 'kiwi');
 });
 
-test('importProfile lehnt Nicht-Objekt-Profile und falsche version weiter ab', () => {
-  assert.equal(importProfile(JSON.stringify({ format: 'bruchmonster', version: 1, profile: [] })).reason, 'falsches-format');
-  assert.equal(importProfile(JSON.stringify({ format: 'bruchmonster', version: 0, profile: {} })).reason, 'beschaedigt');
-  assert.equal(importProfile(JSON.stringify({ format: 'bruchmonster', version: 2, profile: {} })).reason, 'zu-neu');
+test('importProfile lehnt Nicht-Objekt-Profile ab', () => {
+  assert.equal(importProfile(wrap([])).reason, 'beschaedigt');
+  assert.equal(importProfile(wrap('text')).reason, 'beschaedigt');
+  assert.equal(importProfile(seal([1, 2])).reason, 'beschaedigt');
+});
+
+test('Grenzen: riesige Zahlen, Listen und seltsame Texte werden gekappt oder verworfen', () => {
+  const prof = (over) => importProfile(wrap(over)).profile;
+  assert.equal(prof({ coins: 1e300 }).coins, 1_000_000_000);
+  assert.equal(prof({ coins: 12.9 }).coins, 12);
+  assert.equal(prof({ owned: Array.from({ length: 5000 }, (_, i) => `a${i}`) }).owned.length, 300);
+  assert.deepEqual(prof({ owned: ['ok', 'a'.repeat(200), '<img src=x onerror=alert(1)>', 'mit leerzeichen', "x';y"] }).owned, ['ok']);
+  assert.equal(prof({ color: 'red;background:url(//evil)' }).color, 'kiwi');
+  assert.equal(prof({ streak: { days: 1, lastDate: '<b>' } }).streak.lastDate, '');
+  assert.deepEqual(prof({ daily: { a: { date: '2026-01-01', coins: 4 }, b: { date: 'gestern', coins: 4 } } }).daily, { a: { date: '2026-01-01', coins: 4 } });
+  const many = Object.fromEntries(Array.from({ length: 1000 }, (_, i) => [`k${i}`, { right: 1, wrong: 0, last: 1 }]));
+  assert.equal(Object.keys(prof({ mastery: many }).mastery).length, 200);
+});
+
+test('Grenzen: __proto__ und constructor in der Datei veraendern keine Objekte', () => {
+  const evil = JSON.parse('{"name":"X","__proto__":{"polluted":1},"mastery":{"__proto__":{"right":1,"wrong":1,"last":1}},"wearing":{"__proto__":"a","constructor":"b"}}');
+  const res = importProfile(wrap(evil));
+  assert.equal(res.ok, true);
+  assert.equal({}.polluted, undefined);
+  assert.equal(res.profile.polluted, undefined);
+  assert.equal(Object.getPrototypeOf(res.profile.wearing), Object.prototype);
+  assert.equal(Object.getPrototypeOf(res.profile.mastery), Object.prototype);
+  assert.equal(Object.keys(res.profile.mastery).includes('__proto__'), true, 'als gewoehnlicher Schluessel, nicht als Prototyp');
+});
+
+test('Namen: Steuer- und Schreibrichtungszeichen werden entfernt, Emojis und Umlaute bleiben', () => {
+  assert.equal(defaultProfile('A\u202Eevil\u202C\u0000B\u200Fc', 'x').name, 'AevilBc');
+  assert.equal(defaultProfile('Zoë 🦄', 'x').name, 'Zoë 🦄');
+  assert.equal(defaultProfile('\u202E\u200F\u0001', 'x').name, 'Monsterfreund');
 });
 
 test('load repariert ein teilweise kaputtes Profil statt null zu liefern', () => {
   const backend = fakeBackend();
   const store = createStore(backend, { makeId: fixedIds() });
   const { profile: p } = store.createProfile('Mia');
-  backend.setItem(`bruchmonster:profile:${p.id}`, JSON.stringify({ ...p, coins: -5, xp: 40, owned: ['a', 3], cards: 'x', name: 'Mia' }));
+  backend.setItem(`bruchmonster:profile:${p.id}`, seal({ ...p, coins: -5, xp: 40, owned: ['a', 3], cards: 'x', name: 'Mia' }));
   const got = store.load(p.id);
   assert.ok(got);
   assert.equal(got.coins, 0);
@@ -147,6 +194,29 @@ test('load repariert ein teilweise kaputtes Profil statt null zu liefern', () =>
   assert.equal(got.id, p.id);
   backend.setItem(`bruchmonster:profile:${p.id}`, '"text"');
   assert.equal(store.load(p.id), null);
+});
+
+test('Store: von Hand veraenderter oder im Klartext geschriebener Spielstand wird nicht geladen', () => {
+  const backend = fakeBackend();
+  const store = createStore(backend, { makeId: fixedIds() });
+  const { profile: p } = store.createProfile('Mia');
+  const key = `bruchmonster:profile:${p.id}`;
+  const sealed = backend.getItem(key);
+  for (const klartext of ['Mia', 'coins']) assert.ok(!sealed.includes(klartext), `Ablage verraet ${klartext}`);
+  assert.equal(store.load(p.id).name, 'Mia');
+  const doc = JSON.parse(sealed);
+  backend.setItem(key, JSON.stringify({ ...doc, d: doc.d.slice(0, 6) + (doc.d[6] === 'A' ? 'B' : 'A') + doc.d.slice(7) }));
+  assert.equal(store.load(p.id), null, 'veraendert');
+  backend.setItem(key, JSON.stringify({ ...p, coins: 99999 }));
+  assert.equal(store.load(p.id), null, 'Klartext');
+});
+
+test('Store: Index mit boesen ids und Namen wird gereinigt', () => {
+  const backend = fakeBackend();
+  backend.setItem('bruchmonster:profiles', JSON.stringify([
+    { id: 'ok1', name: 'Gut\u202E' }, { id: '<script>', name: 'Boese' }, { id: 'a'.repeat(100), name: 'Lang' }, { id: 5, name: 'Zahl' },
+  ]));
+  assert.deepEqual(createStore(backend).listProfiles(), [{ id: 'ok1', name: 'Gut' }]);
 });
 
 test('importProfile nimmt Profil-Id nicht aus der Datei und speichert nicht', () => {
@@ -265,7 +335,7 @@ test('Store bei vollem Speicher: Lesen geht, persistent bleibt true, Speichern m
   const p1 = defaultProfile('Alt', 'a1');
   const backend = fullBackend({
     'bruchmonster:profiles': JSON.stringify([{ id: 'a1', name: 'Alt' }]),
-    'bruchmonster:profile:a1': JSON.stringify(p1),
+    'bruchmonster:profile:a1': seal(p1),
   });
   const store = createStore(backend, { makeId: fixedIds() });
   assert.equal(store.persistent, true);
@@ -322,10 +392,10 @@ test('seen: Standard leer, fehlend wird [], falscher Typ wird repariert, bleibt 
   assert.deepEqual(defaultProfile('Mia', 'p1').seen, []);
   const base = defaultProfile('Mia', 'p1');
   const { seen, ...noSeen } = base;
-  const ok = importProfile(JSON.stringify({ format: 'bruchmonster', version: 1, profile: noSeen }));
+  const ok = importProfile(wrap(noSeen));
   assert.equal(ok.ok, true);
   assert.deepEqual(ok.profile.seen, []);
-  const bad = importProfile(JSON.stringify({ format: 'bruchmonster', version: 1, profile: { ...base, seen: [1] } }));
+  const bad = importProfile(wrap({ ...base, seen: [1] }));
   assert.deepEqual(bad.profile.seen, []);
   const good = importProfile(exportProfile({ ...base, seen: ['platzieren'] }));
   assert.deepEqual(good.profile.seen, ['platzieren']);
@@ -371,4 +441,27 @@ test('Index fehlt oder ist gueltig: kein Backup', () => {
   store.createProfile('A');
   store.createProfile('B');
   assert.equal(backend.getItem('bruchmonster:profiles.bak'), null);
+});
+
+test('Siegel gehoert zu einer Profil-id: kopierter Eintrag unter anderer id wird nicht geladen', () => {
+  const backend = fakeBackend();
+  const store = createStore(backend, { makeId: fixedIds() });
+  const a = store.createProfile('Eins').profile;
+  const b = store.createProfile('Zwei').profile;
+  backend.setItem(`bruchmonster:profile:${b.id}`, backend.getItem(`bruchmonster:profile:${a.id}`));
+  assert.equal(store.load(b.id), null);
+  assert.equal(store.load(a.id).name, 'Eins');
+});
+
+test('Namen aus unsichtbaren Zeichen werden zu Monsterfreund', () => {
+  assert.equal(defaultProfile('\u200B\u200B\u3164\u2800', 'x').name, 'Monsterfreund');
+  assert.equal(defaultProfile('Mi\u200Ba', 'x').name, 'Mia');
+});
+
+test('Index: riesiger oder ueberlanger Index wird begrenzt', () => {
+  const backend = fakeBackend();
+  backend.setItem('bruchmonster:profiles', JSON.stringify(Array.from({ length: 5000 }, (_, i) => ({ id: `p${i}`, name: 'x' }))));
+  const t0 = Date.now();
+  assert.ok(createStore(backend).listProfiles().length <= 100);
+  assert.ok(Date.now() - t0 < 500);
 });

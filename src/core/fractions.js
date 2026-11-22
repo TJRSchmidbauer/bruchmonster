@@ -101,9 +101,11 @@ const RE_MIXED = /^(\d+)\s+(\d+)\s*\/\s*(\d+)$/;
 export function parseAnswer(text) {
   const t = String(text ?? '').trim();
   if (t === '') return { ok: false, reason: 'leer' };
+  if (t.length > 40) return { ok: false, reason: 'format' };
   if (t.includes('-')) return { ok: false, reason: 'negativ' };
 
-  const safe = (...xs) => xs.every(Number.isSafeInteger);
+  // Bis eine Million: dann sind alle Produkte beim Vergleichen und Kuerzen exakt darstellbar.
+  const safe = (...xs) => xs.every((x) => Number.isSafeInteger(x) && x <= 1_000_000);
   let m;
   if ((m = RE_MIXED.exec(t))) {
     const whole = Number(m[1]);

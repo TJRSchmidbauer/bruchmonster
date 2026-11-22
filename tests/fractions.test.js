@@ -93,3 +93,10 @@ test('parseAnswer: sehr lange Ziffernfolgen werfen nicht', () => {
   assert.deepEqual(parseAnswer(`${big} 1/2`), { ok: false, reason: 'format' });
   assert.deepEqual(parseAnswer('9007199254740991 1/9007199254740991'), { ok: false, reason: 'format' });
 });
+
+test('parseAnswer: zu grosse Zahlen und zu lange Eingaben werden abgelehnt (keine Gleitkomma-Faelschung wie 6755399441055743/9007199254740991)', () => {
+  for (const t of ['6755399441055743/9007199254740991', '1000001/2', '1/1000001', '1 1000001/2', '1'.repeat(41), '9'.repeat(30)]) {
+    assert.equal(parseAnswer(t).ok, false, t);
+  }
+  assert.equal(parseAnswer('1000000/999999').ok, true);
+});

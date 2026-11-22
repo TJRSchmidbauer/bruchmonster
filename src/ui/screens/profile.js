@@ -6,10 +6,12 @@ import { monsterColor } from '../monster/preview.js';
 
 const IMPORT_FEHLER = {
   'kein-json': 'Das ist keine Spielstand-Datei.',
-  'falsches-format': 'Diese Datei gehört zu einem anderen Programm.',
-  'zu-neu': 'Dieser Spielstand ist von einer neueren Bruchmonster-Version.',
+  'falsches-format': 'Diese Datei gehört nicht zu Bruchmonster.',
+  verfaelscht: 'Diese Datei wurde verändert und lässt sich nicht öffnen. Nimm die Sicherung, wie sie gespeichert wurde.',
+  'zu-gross': 'Diese Datei ist viel zu groß für einen Spielstand.',
   beschaedigt: 'Die Datei ist beschädigt.',
 };
+const MAX_DATEI_BYTES = 200_000;
 
 export function renderProfile(root, _params, app) {
   const { store } = app;
@@ -19,7 +21,7 @@ export function renderProfile(root, _params, app) {
   function open(id) {
     const p = app.unsaved?.pendingFor(id) ?? store.load(id);
     if (!p) {
-      message = 'Dieser Spielstand lässt sich nicht lesen.';
+      message = 'Dieser Spielstand ist kaputt oder wurde verändert und lässt sich nicht öffnen. Lösche ihn und lade deine Sicherung, oder fang neu an.';
       draw('#meldung');
       return;
     }
@@ -44,6 +46,7 @@ export function renderProfile(root, _params, app) {
   function onFile(ev) {
     const file = ev.target.files[0];
     if (!file) return;
+    if (file.size > MAX_DATEI_BYTES) { ev.target.value = ''; return say(IMPORT_FEHLER['zu-gross']); }
     const reader = new FileReader();
     reader.onload = () => {
       const res = importProfile(String(reader.result));

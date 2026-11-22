@@ -5,7 +5,7 @@ import { build as esbuild } from 'esbuild';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { fontFaces } from '../build.mjs';
+import { fontFaces, cspFor } from '../build.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = process.argv[2] ?? '/tmp/bruchmonster-e2e.html';
@@ -22,6 +22,8 @@ const hook = {
 const r = await esbuild({ entryPoints: [join(root, 'src/main.js')], bundle: true, format: 'iife', write: false, charset: 'utf8', plugins: [hook] });
 const js = r.outputFiles[0].text.replace(/<\/script/gi, '<\\/script');
 const css = fontFaces() + '\n' + ['styles.css', 'styles-monster.css'].map((f) => readFileSync(join(root, 'src', f), 'utf8')).join('\n');
-const html = readFileSync(join(root, 'src/index.html'), 'utf8').replace('<!--CSS-->', () => css).replace('<!--JS-->', () => js);
+const bare = readFileSync(join(root, 'src/index.html'), 'utf8').replace('<!--CSS-->', () => css).replace('<!--JS-->', () => js);
+// Auch die Testfassung laeuft unter der echten Content-Security-Policy.
+const html = bare.replace('<!--CSP-->', () => `<meta http-equiv="Content-Security-Policy" content="${cspFor(bare)}">`);
 writeFileSync(out, html);
 console.log('geschrieben:', out);

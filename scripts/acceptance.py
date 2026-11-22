@@ -383,9 +383,11 @@ def run():
             page.get_by_role('button', name='Mia exportieren').click()
         tmp = pathlib.Path(tempfile.mkdtemp()) / 'export.json'
         dl.value.save_as(str(tmp))
-        exp = json.loads(tmp.read_text())
-        prof = exp.get('profile', exp)
-        rec('Export liefert Datei mit Münzen, Besitz und Höhle', prof.get('coins') == saved_coins and 'halbe-socken' in prof.get('owned', []) and 'dreibein-hocker' in prof.get('cave', []), f'coins={prof.get("coins")}')
+        raw = tmp.read_text()
+        exp = json.loads(raw)
+        sealed_ok = set(exp) == {'format', 'version', 'n', 'd', 'm'} and exp['version'] == 2 and not any(w in raw for w in ['coins', 'owned', 'halbe-socken', 'Mia'])
+        rec('Export ist ein Siegel: Inhalt nicht lesbar (Münzen, Besitz, Name nicht im Klartext)', sealed_ok)
+        # Der Inhalt selbst wird unten durch die Rundreise (Import) geprueft.
 
         # ---- 5 Import in neues Profil ----
         page.get_by_role('button', name='Mia löschen').click()

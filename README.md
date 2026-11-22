@@ -48,6 +48,33 @@ Der Spielstand liegt im Speicher des Browsers. Wer den Verlauf löscht oder das 
 - Ein Test mit echtem Touch-Gerät und eine Kontrastmessung stehen noch aus. Bei 9 bis 12 Streifenstücken sind einzelne Stücke schmaler als 44 px. Als Ausweg gibt es „Ein Stück mehr/weniger“ und das Ziehen über mehrere Stücke.
 - Eine Einbindung in Moodle oder mebis (SCORM, H5P) ist denkbar, aber nicht gebaut.
 
+## Sicherheit
+
+**Spielstand.** Der Spielstand (Datei und Browser-Speicher) ist verschlüsselt und mit einer Prüfsumme versehen. Er ist nicht lesbar, und jede Änderung von Hand führt dazu, dass er abgelehnt wird. Ein Kind kann also nicht mal eben Münzen im Texteditor oder in den Browser-Werkzeugen eintragen. Alte, unverschlüsselte Dateien werden nicht mehr angenommen.
+
+**Ehrliche Grenze.** Die App läuft komplett im Browser, der Schlüssel steckt deshalb im Programmtext. Wer den Quelltext liest und selbst Code schreibt, kann gültige Spielstände bauen, und wer die HTML-Datei lokal bearbeitet, kann alles ändern. Auch ein alter Spielstand lässt sich erneut einspielen, und mit den Entwicklerwerkzeugen des Browsers (Haltepunkt im Programm, Werte in der Konsole ändern) lässt sich der Spielstand umgehen, weil die App ihn danach selbst siegelt. Ebenso kann man die Uhr des Geräts verstellen, um das Tageslimit für Münzen zu umgehen; die App ignoriert nur das Zurückstellen um wenige Tage. Echte Fälschungssicherheit gäbe es nur mit einem Server, den dieses Projekt bewusst nicht hat. Das Siegel ist eine Hürde für Kinder, keine Sicherheit gegen Fachleute.
+
+**Schadcode.**
+
+- Eine strenge Content-Security-Policy (per `<meta>`, mit Hashes beim Bau berechnet) erlaubt genau dieses eine Skript und diese Stile. Netzverbindungen, fremde Skripte, Rahmen, Formulare und Plugins sind gesperrt.
+- Trusted Types sperren in Browsern, die sie kennen, das Einfügen von HTML als Text.
+- Der Code benutzt kein `innerHTML`, kein `eval` und keine Laufzeit-Abhängigkeiten. Eingaben werden immer als Text gesetzt. Ein Test sucht den Quelltext nach solchen Stellen ab.
+- Importierte Spielstände werden geprüft: höchstens 200 KB, nur bekannte Feldformen, begrenzte Zahlen und Listen, bereinigte Namen.
+
+`npm test` und `python3 scripts/security-check.py` prüfen das, das zweite Skript im echten Browser, mit Angriffsversuchen.
+
+**Datei prüfen.** Wer die App herunterlädt, kann nachrechnen, ob sie unverändert ist, und den Wert mit [`dist/bruchmonster.html.sha256`](dist/bruchmonster.html.sha256) vergleichen:
+
+```
+sha256sum bruchmonster.html                        # Linux
+shasum -a 256 bruchmonster.html                    # macOS
+certutil -hashfile bruchmonster.html SHA256        # Windows
+```
+
+**Hinweis zu GitHub Pages.** Alle Pages-Seiten unter `tjrschmidbauer.github.io` teilen sich denselben Browser-Speicher. Die Schlüssel der App beginnen deshalb alle mit `bruchmonster:`.
+
+Sicherheitslücken bitte als Issue melden oder über [schmidbauer.io](https://schmidbauer.io).
+
 ## Entwicklung
 
 Voraussetzung: Node 22.
@@ -55,7 +82,7 @@ Voraussetzung: Node 22.
 ```
 npm install
 npm test          # Tests (node:test, linkedom)
-npm run build     # schreibt dist/bruchmonster.html
+npm run build     # schreibt dist/bruchmonster.html, index.html und die Prüfsumme
 ```
 
 Aufbau: ES-Module in `src/` (Rechenkern in `src/core/`, Aufgaben in `src/tasks/`, Oberfläche in `src/ui/`), esbuild bündelt Skript, Stile und Schriften in eine Datei. Die Browser-Abnahme mit Playwright und Chrome ist skriptgesteuert:
