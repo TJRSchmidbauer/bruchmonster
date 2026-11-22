@@ -158,8 +158,9 @@ export function numberline(opts) {
     let next = null;
     if (k === 'ArrowRight' || k === 'ArrowUp' || k === 'ArrowLeft' || k === 'ArrowDown') {
       const dir = k === 'ArrowRight' || k === 'ArrowUp' ? 1 : -1;
+      // value ist auf 9 Stellen gerundet; die Toleranz muss groesser sein, sonst bleibt der Punkt bei Strichen wie 1/11 haengen.
       const g = value / step;
-      next = (dir > 0 ? Math.floor(g + 1e-9) + 1 : Math.ceil(g - 1e-9) - 1) * step;
+      next = (dir > 0 ? Math.floor(g + 1e-6) + 1 : Math.ceil(g - 1e-6) - 1) * step;
     } else if (k === 'Home') next = from;
     else if (k === 'End') next = to;
     else if (k === 'PageUp') next = value + q;

@@ -397,3 +397,9 @@ test('monsterStage: Grenzen 0, 30, 100, 250, 500', () => {
   assert.equal(monsterStage(500), 4);
   assert.equal(monsterStage(9999), 4);
 });
+
+test('reward: negative Hinweise und unbekannte Stufe stürzen nicht ab', () => {
+  assert.equal(reward({ level: 1, hintsUsed: -5 }), 2);
+  assert.equal(reward({ level: 99, hintsUsed: 0 }), 2);
+  assert.equal(reward({ level: undefined }), 2);
+});

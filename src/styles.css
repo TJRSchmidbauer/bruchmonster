@@ -445,7 +445,8 @@ h1:focus { outline: none; box-shadow: none; }
 
 /* Zahlenstrahl-Schieber, Streifen, Experimente ------------------------------ */
 .answer--line .drawing, .answer--strips .drawing, .experiment__stage .drawing { max-width: 560px; }
-.nl-live { touch-action: none; cursor: pointer; user-select: none; -webkit-user-select: none; }
+.nl-live { cursor: pointer; user-select: none; -webkit-user-select: none; }
+.nl-live .nl-track, .nl-live .nl-pin { touch-action: none; }
 .nl-pin { cursor: grab; outline: none; }
 .nl-pin .nl-ring { opacity: 0; }
 .nl-pin:focus-visible .nl-ring { opacity: 1; }
@@ -456,7 +457,7 @@ h1:focus { outline: none; box-shadow: none; }
 
 .strips-widget { display: flex; flex-direction: column; gap: var(--sp-3); }
 .strips-widget .drawing { max-width: 560px; }
-.strips-live { touch-action: none; user-select: none; -webkit-user-select: none; }
+.strips-live { max-width: 440px; touch-action: none; user-select: none; -webkit-user-select: none; }
 .strip-cell { cursor: pointer; outline: none; }
 .strip-cell:hover { fill-opacity: 0.25; }
 .strip-cell[aria-pressed='true']:hover { fill-opacity: 1; }

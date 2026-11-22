@@ -73,17 +73,39 @@ export function createTaskView(ctx) {
   function closeSheet() {
     sheetEl?.remove();
     sheetEl = null;
+    document.removeEventListener('keydown', onSheetKey, true);
   }
 
-  function openSheet({ tone, title, text, extra, buttons }) {
+  // Leichte Fokusfalle: Tab bleibt im Blatt, solange es offen ist. Esc gibt bei einem Fehlversuch
+  // die Aufgabe wieder frei (wie "Nochmal versuchen"); bei richtig/Loesung bleibt das Blatt, sonst
+  // stuende man vor einer gesperrten Aufgabe ohne Weg weiter.
+  function onSheetKey(e) {
+    if (!sheetEl) return;
+    if (e.key === 'Escape' && (sheetEl.classList.contains('sheet--wrong') || sheetEl.dataset.retry === '1')) {
+      e.preventDefault();
+      retry();
+      return;
+    }
+    if (e.key !== 'Tab') return;
+    const f = [...sheetEl.querySelectorAll('button:not([disabled]), [href], input, [tabindex]:not([tabindex="-1"])')];
+    if (f.length === 0) return;
+    const first = f[0];
+    const last = f[f.length - 1];
+    if (!sheetEl.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+    else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+
+  function openSheet({ tone, title, text, extra, buttons, retry: canRetry = false }) {
     closeSheet();
-    sheetEl = h('div', { class: `sheet sheet--${tone}`, role: 'status' },
+    sheetEl = h('div', { class: `sheet sheet--${tone}`, role: 'status', 'data-retry': canRetry ? '1' : null },
       h('div', { class: 'sheet__inner' },
         h('p', { class: 'sheet__title' }, title),
         text ? h('p', { class: 'sheet__text' }, richText(text)) : null,
         extra ?? null,
         h('div', { class: 'sheet__actions' }, buttons)));
     document.body.append(sheetEl);
+    document.addEventListener('keydown', onSheetKey, true);
     sheetEl.querySelector('.btn--primary, .btn')?.focus({ preventScroll: true });
   }
 
@@ -211,7 +233,7 @@ export function createTaskView(ctx) {
     setControls(true);
     const res = runner.submit(v);
     if (res.invalid) {
-      openSheet({ tone: 'info', title: 'Moment.', text: INVALID_TEXT[res.invalid] ?? INVALID_TEXT.format, buttons: [retryBtn()] });
+      openSheet({ tone: 'info', title: 'Moment.', text: INVALID_TEXT[res.invalid] ?? INVALID_TEXT.format, buttons: [retryBtn()], retry: true });
     } else if (res.correct) {
       showCorrect(res);
     } else {

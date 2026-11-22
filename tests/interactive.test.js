@@ -239,3 +239,18 @@ test('strips split: minParts und maxParts begrenzen die Teilung', () => {
   for (let i = 0; i < 20; i++) el.querySelector('[data-act="less"]').dispatchEvent(new win.Event('click', { bubbles: true }));
   assert.equal(el.getState().parts, 2);
 });
+
+test('numberline: Pfeiltasten kommen bei Strichen wie 1/11 bis ans Ende (Rundung darf nicht haengen bleiben)', () => {
+  for (const ticks of [3, 6, 7, 9, 11, 12, 13]) {
+    const svg = numberline({ from: 0, to: 1, ticks, marks: [], draggable: true });
+    const pin = svg.querySelector('[role="slider"]');
+    for (let i = 1; i <= ticks; i++) {
+      key(pin, 'ArrowRight');
+      near(Number(pin.getAttribute('aria-valuenow')), i / ticks);
+    }
+    for (let i = ticks - 1; i >= 0; i--) {
+      key(pin, 'ArrowLeft');
+      near(Number(pin.getAttribute('aria-valuenow')), i / ticks);
+    }
+  }
+});

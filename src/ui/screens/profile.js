@@ -58,7 +58,7 @@ export function renderProfile(root, _params, app) {
       if (!res.ok) return say(IMPORT_FEHLER[res.reason] ?? IMPORT_FEHLER.beschaedigt);
       const saved = store.save(res.profile);
       if (!saved.ok) app.toast('Speichern hat nicht geklappt. Exportiere den Spielstand, damit nichts verloren geht.');
-      app.toast(`Spielstand von ${res.profile.name} ist da.`);
+      else app.toast(`Spielstand von ${res.profile.name} ist da.`);
       app.openProfile(res.profile);
     };
     reader.onerror = () => say(IMPORT_FEHLER.beschaedigt);

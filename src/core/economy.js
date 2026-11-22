@@ -85,9 +85,10 @@ function daysBetween(a, b) {
 
 // Belohnung fuer eine richtige Antwort. r.streak = Serie richtiger Antworten inkl. dieser.
 export function reward({ level, hintsUsed = 0, streak = 0, explained = false }) {
-  const base = BASE_REWARD[level];
-  if (base === undefined) throw new Error(`Unbekannte Stufe: ${level}`);
-  let coins = Math.max(1, base - hintsUsed);
+  // Eine fehlerhafte Aufgabe darf keine Sitzung zum Absturz bringen: unbekannte Stufe zaehlt als 1.
+  const base = BASE_REWARD[level] ?? BASE_REWARD[1];
+  const hints = Number.isFinite(hintsUsed) ? Math.max(0, hintsUsed) : 0;
+  let coins = Math.max(1, base - hints);
   if (streak >= 3) coins += 1;
   if (explained) coins += 2;
   return coins;

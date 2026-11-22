@@ -58,7 +58,7 @@ export function stripsStatic({ rows }, opts = {}) {
 }
 
 const OVERLAY_COLORS = ['#FFD43B', '#14A9BD', '#FF8A1F', '#7B5CFF'];
-const TALL = 52;
+const TALL = 64;
 const reducedMotion = () => typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
 function wrapper(mode, svg, controls, label) {

@@ -34,7 +34,7 @@ export function stripsWidget(data, onSubmit) {
   const rows = data.rows.map((r) => ({ ...r, filled: 0 }));
   const strip = strips({ rows, interactive: 'fill' });
   const el = h('div', { class: 'answer answer--strips' }, strip,
-    h('p', { class: 'field__hint small' }, 'Tipp die Stücke an oder zieh darüber. Mit der Tastatur: Pfeiltasten und Leertaste.'));
+    h('p', { class: 'field__hint small' }, 'Tipp die Stücke an oder zieh darüber. Mit der Tastatur: Pfeiltasten zum Wandern, Enter oder Leertaste zum Färben, Strg+Enter zum Prüfen.'));
   el.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && e.target?.getAttribute?.('role') === 'button' && e.ctrlKey) onSubmit?.();
   });
