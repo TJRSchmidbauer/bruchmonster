@@ -215,3 +215,27 @@ test('taskview: richtig aber ungekuerzt heisst "Fast!" und zaehlt nicht als Fehl
   assert.equal(runner.state().wrongAttempts, 0);
   view.destroy();
 });
+
+test('strips overlay: aufeinander blendet Einzelbeschriftungen aus, zeigt Legende, spaetere Zeilen durchscheinend', () => {
+  const el = strips({ rows: [{ parts: 4, filled: 3 }, { parts: 8, filled: 3 }], interactive: 'overlay' });
+  const legend = el.querySelector('.ov-legend');
+  assert.equal(legend.hasAttribute('hidden'), true);
+  el.querySelector('[data-act="overlay"]').dispatchEvent(new win.Event('click', { bubbles: true }));
+  assert.equal(legend.hasAttribute('hidden'), false);
+  const labels = [...el.querySelectorAll('.ov-label')];
+  assert.ok(labels.every((l) => l.getAttribute('opacity') === '0'));
+  const bgs = [...el.querySelectorAll('.ov-bg')];
+  assert.equal(bgs[0].getAttribute('fill-opacity'), '1');
+  assert.equal(bgs[1].getAttribute('fill-opacity'), '0');
+  const fills = [...el.querySelectorAll('.ov-fill')];
+  assert.equal(fills[0].getAttribute('fill-opacity'), '1');
+  assert.ok(Number(fills[1].getAttribute('fill-opacity')) < 1);
+  assert.ok(legend.textContent.includes('3/4') && legend.textContent.includes('3/8'));
+});
+
+test('strips split: minParts und maxParts begrenzen die Teilung', () => {
+  const el = strips({ rows: [{ parts: 8, filled: 6 }], interactive: 'split', minParts: 2, maxParts: 8 });
+  assert.equal(el.querySelector('[data-act="more"]').disabled, true);
+  for (let i = 0; i < 20; i++) el.querySelector('[data-act="less"]').dispatchEvent(new win.Event('click', { bubbles: true }));
+  assert.equal(el.getState().parts, 2);
+});

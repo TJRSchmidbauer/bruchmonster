@@ -4,6 +4,7 @@ import { h, button, announce } from './dom.js';
 import { richText } from './richtext.js';
 import { numberline } from './widgets/numberline.js';
 import { strips, stripsStatic } from './widgets/strips.js';
+import { simplify } from '../core/fractions.js';
 
 const ALGAE = '#22A866';
 const PUMPKIN = '#FF8A1F';
@@ -32,7 +33,14 @@ function platzieren(onReady) {
   function draw() {
     const svg = numberline({
       from: 0, to: 1, ticks: n, marks: [], draggable: true, value: x,
-      onPlace: (v) => { x = v; say(); ready(); },
+      // Der Punkt rastet an den Strichen ein, damit "bei k/n" stimmt.
+      onPlace: (v) => {
+        const snapped = Math.round(v * n) / n;
+        x = snapped;
+        if (Math.abs(v - snapped) > 1e-9) svg.setValue(snapped);
+        say();
+        ready();
+      },
     });
     host.replaceChildren(svg);
     less.disabled = n <= 2;
@@ -92,7 +100,13 @@ function dazwischen(onReady) {
     const n = LEVELS[at];
     host.replaceChildren(stripsLine(n));
     const between = [];
-    for (let i = 1; i < n; i++) if (i * 4 > n && i * 2 < n) between.push(`${i}/${n}`);
+    for (let i = 1; i < n; i++) {
+      if (i * 4 > n && i * 2 < n) {
+        const r = simplify({ n: i, d: n });
+        const t = `${r.n}/${r.d}`;
+        if (!between.includes(t)) between.push(t);
+      }
+    }
     caption.replaceChildren(richText(between.length
       ? `Bei ${n} Teilen liegen zwischen 1/4 und 1/2 schon: ${between.join(', ')}.`
       : `Bei ${n} Teilen liegt noch kein Strich zwischen 1/4 und 1/2.`));
@@ -104,16 +118,17 @@ function dazwischen(onReady) {
 }
 
 // Streifen umteilen (Erweitern: feiner, Kuerzen: gröber).
-function splitPlay(start, nice) {
+function splitPlay(start, nice, limits = {}) {
   return (onReady) => {
     const ready = once(onReady);
     const caption = h('p', { class: 'experiment__caption', 'aria-live': 'polite' });
     const say = (s) => {
+      const extra = nice(s);
       caption.replaceChildren(richText(s.exact
-        ? `${start.filled}/${start.parts} = ${s.filled}/${s.parts}. ${nice(s)}`
+        ? `${start.filled}/${start.parts} = ${s.filled}/${s.parts}.${extra ? ` ${extra}` : ''}`
         : `Bei ${s.parts} Teilen geht die Färbung mitten durch ein Stück. Probier eine andere Teilung.`));
     };
-    const el = strips({ rows: [start], interactive: 'split', onChange: (s) => { say(s); ready(); } });
+    const el = strips({ rows: [start], interactive: 'split', ...limits, onChange: (s) => { say(s); ready(); } });
     say(el.getState());
     return h('div', { class: 'experiment__play' }, h('div', { class: 'experiment__stage' }, el), caption);
   };
@@ -166,8 +181,8 @@ export const EXPERIMENTS = {
     build: platzieren,
     question: {
       prompt: 'Die Strecke von 0 bis 1 hat 8 gleiche Teile. Wo liegt 3/8?',
-      options: ['Beim 3. Strich nach der 0', 'Beim 8. Strich, dann 3 zurück', 'Genau in der Mitte'],
-      correct: 0,
+      options: ['Genau in der Mitte', 'Beim 8. Strich, dann 3 zurück', 'Beim 3. Strich nach der 0'],
+      correct: 2,
     },
     rule: 'Der Nenner sagt, in wie viele gleiche Teile die Strecke von 0 bis 1 geschnitten wird. Der Zähler sagt, den wievielten Strich du von der 0 aus ansteuerst. 3/8 liegt also beim 3. Strich.',
   },
@@ -177,8 +192,8 @@ export const EXPERIMENTS = {
     build: vergleichen,
     question: {
       prompt: 'Zwei Brüche haben denselben Zähler. Welcher ist größer?',
-      options: ['Der mit dem kleineren Nenner', 'Der mit dem größeren Nenner', 'Sie sind immer gleich groß'],
-      correct: 0,
+      options: ['Sie sind immer gleich groß', 'Der mit dem kleineren Nenner', 'Der mit dem größeren Nenner'],
+      correct: 1,
     },
     rule: 'Mehr Stücke heißt kleinere Stücke. Bei gleichem Zähler ist der Bruch mit dem größeren Nenner kleiner: 1/4 ist weniger als 1/2.',
   },
@@ -196,7 +211,7 @@ export const EXPERIMENTS = {
   erweitern: {
     title: 'Feiner teilen, gleiche Länge',
     intro: 'Der Streifen ist 2/3 gefärbt. Teile ihn in mehr Stücke. Die Färbung bleibt gleich lang, nur die Striche ändern sich.',
-    build: splitPlay({ parts: 3, filled: 2 }, (s) => (s.parts % 3 === 0 ? `Du hast mit ${s.parts / 3} erweitert.` : '')),
+    build: splitPlay({ parts: 3, filled: 2 }, (s) => (s.parts % 3 === 0 && s.parts > 3 ? `Du hast mit ${s.parts / 3} erweitert.` : ''), { minParts: 3, maxParts: 12 }),
     question: {
       prompt: 'Du teilst den Streifen 2/3 in 6 Teile. Wie viele davon sind gefärbt?',
       options: ['2 von 6', '4 von 6', '5 von 6'],
@@ -207,11 +222,11 @@ export const EXPERIMENTS = {
   kuerzen: {
     title: 'Gröber teilen, gleiche Länge',
     intro: 'Der Streifen ist 6/8 gefärbt. Mach die Teile größer, also weniger Stücke. Wo passt die Färbung genau an einen Strich?',
-    build: splitPlay({ parts: 8, filled: 6 }, (s) => (s.parts < 8 ? `Gröber geteilt: ${8 / s.parts} Achtel passen in ein Stück.` : '')),
+    build: splitPlay({ parts: 8, filled: 6 }, (s) => (s.parts < 8 && 8 % s.parts === 0 ? `Gröber geteilt: ${8 / s.parts} Achtel passen in ein Stück.` : ''), { minParts: 2, maxParts: 8 }),
     question: {
       prompt: 'Du teilst den Streifen 6/8 in nur 4 Teile. Wie viele davon sind gefärbt?',
-      options: ['2 von 4', '3 von 4', '4 von 4'],
-      correct: 1,
+      options: ['3 von 4', '2 von 4', '4 von 4'],
+      correct: 0,
     },
     rule: 'Kürzen heißt: Zähler und Nenner durch dieselbe Zahl teilen. 6/8 wird zu 3/4. Die Stücke werden größer, die Länge bleibt gleich.',
   },
@@ -221,8 +236,8 @@ export const EXPERIMENTS = {
     build: addieren,
     question: {
       prompt: 'Du willst 1/2 + 1/3 rechnen. In welche Stücke teilst du beide um?',
-      options: ['In Fünftel', 'In Sechstel', 'In Drittel'],
-      correct: 1,
+      options: ['In Fünftel', 'In Drittel', 'In Sechstel'],
+      correct: 2,
     },
     rule: 'Addieren geht nur mit gleich großen Stücken. Mach die Brüche gleichnamig (hier Sechstel), dann zählst du nur die Zähler zusammen. Der Nenner bleibt: 3/6 + 2/6 = 5/6.',
   },

@@ -235,10 +235,12 @@ function fillStrips({ rows, onChange }) {
 }
 
 // Einen Streifen umteilen: die gefaerbte Laenge bleibt, nur die Teilung aendert sich.
-function splitStrips({ rows, onChange }) {
+function splitStrips({ rows, onChange, minParts = 1, maxParts = 24 }) {
   const row = rows[0];
   const base = { n: row.filled, d: row.parts }; // gefaerbte Laenge n/d
-  let parts = Math.min(24, Math.max(1, row.parts));
+  const lo = Math.max(1, minParts);
+  const hi = Math.min(24, maxParts);
+  let parts = Math.min(hi, Math.max(lo, row.parts));
   const kids = [];
   const y = 4;
   const rowH = TALL;
@@ -269,11 +271,11 @@ function splitStrips({ rows, onChange }) {
     const txt = s.exact ? `${s.filled} von ${parts} Teilen gefärbt` : `${parts} Teile, die Färbung geht mitten durch ein Stück`;
     svg.setAttribute('aria-label', `Streifen: ${txt}`);
     status.textContent = txt;
-    less.disabled = parts <= 1;
-    more.disabled = parts >= 24;
+    less.disabled = parts <= lo;
+    more.disabled = parts >= hi;
   }
   function setParts(n) {
-    const np = Math.min(24, Math.max(1, Math.round(n)));
+    const np = Math.min(hi, Math.max(lo, Math.round(n)));
     if (np === parts) return;
     parts = np;
     paint();
@@ -287,43 +289,72 @@ function splitStrips({ rows, onChange }) {
 }
 
 // Mehrere Streifen gleicher Breite untereinander; "Uebereinanderlegen" schiebt sie aufeinander.
+// Aufeinander: der erste Streifen bleibt deckend, die weiteren sind durchscheinend mit gestricheltem Rahmen,
+// die Beschriftung wandert in eine Legende unter dem Streifen.
 function overlayStrips({ rows, onChange }) {
   const rowH = 40;
   const gap = 14;
+  const legendH = 30;
   const height = rows.length * rowH + (rows.length - 1) * gap + 8;
+  const stackedH = rowH + 8 + legendH;
   const ys = rows.map((_, i) => 4 + i * (rowH + gap));
+  const colorOf = (row, ri) => row.color ?? OVERLAY_COLORS[ri % OVERLAY_COLORS.length];
+  const FONT_D = 'Grandstander, system-ui, sans-serif';
   const groups = rows.map((row, ri) => {
-    const color = row.color ?? OVERLAY_COLORS[ri % OVERLAY_COLORS.length];
     const pw = BAR_W / row.parts;
-    const kids = [h('rect', { x: BAR_X, y: 0, width: BAR_W, height: rowH, rx: 8, fill: '#FFFFFF', class: 'ov-bg' })];
-    kids.push(h('rect', { x: BAR_X, y: 0, width: pw * row.filled, height: rowH, fill: color, 'fill-opacity': 0.85, class: 'strip-part' }));
+    const bg = h('rect', { x: BAR_X, y: 0, width: BAR_W, height: rowH, rx: 8, fill: '#FFFFFF', class: 'ov-bg' });
+    const fill = h('rect', { x: BAR_X, y: 0, width: pw * row.filled, height: rowH, fill: colorOf(row, ri), 'fill-opacity': 1, class: 'strip-part ov-fill' });
+    const ticks = h('g', { class: 'ov-ticks' });
     for (let i = 1; i < row.parts; i++) {
-      kids.push(h('line', { x1: BAR_X + i * pw, y1: 0, x2: BAR_X + i * pw, y2: rowH, stroke: INK, 'stroke-width': 2 }));
+      ticks.append(h('line', { x1: BAR_X + i * pw, y1: 0, x2: BAR_X + i * pw, y2: rowH, stroke: INK, 'stroke-width': 2 }));
     }
-    kids.push(h('rect', { x: BAR_X, y: 0, width: BAR_W, height: rowH, rx: 8, fill: 'none', stroke: INK, 'stroke-width': 3 }));
-    kids.push(h('text', { x: LABEL_W - 4, y: rowH / 2 + 7, 'text-anchor': 'end', 'font-size': 20, 'font-weight': 900, 'font-family': 'Grandstander, system-ui, sans-serif', fill: INK }, format({ n: row.filled, d: row.parts })));
-    return h('g', { transform: `translate(0 ${ys[ri]})`, class: 'ov-row' }, kids);
+    const frame = h('rect', { x: BAR_X, y: 0, width: BAR_W, height: rowH, rx: 8, fill: 'none', stroke: INK, 'stroke-width': 3, class: 'ov-frame' });
+    const label = h('text', { x: LABEL_W - 4, y: rowH / 2 + 7, 'text-anchor': 'end', 'font-size': 20, 'font-weight': 900, 'font-family': FONT_D, fill: INK, class: 'ov-label' }, format({ n: row.filled, d: row.parts }));
+    return h('g', { transform: `translate(0 ${ys[ri]})`, class: 'ov-row' }, bg, fill, ticks, frame, label);
   });
+  const legend = h('g', { class: 'ov-legend', hidden: true, transform: `translate(0 ${rowH + 14})` },
+    rows.map((row, ri) => {
+      const x = BAR_X + ri * 130;
+      return h('g', null,
+        h('rect', { x, y: 0, width: 22, height: 18, rx: 4, fill: colorOf(row, ri), 'fill-opacity': ri === 0 ? 1 : 0.55, stroke: INK, 'stroke-width': 2, 'stroke-dasharray': ri === 0 ? null : '4 3' }),
+        h('text', { x: x + 30, y: 15, 'font-size': 18, 'font-weight': 900, 'font-family': FONT_D, fill: INK }, format({ n: row.filled, d: row.parts })));
+    }));
   const svg = h('svg', {
     class: 'drawing drawing--strips', viewBox: `0 0 ${W} ${height}`, role: 'img', focusable: 'false',
     'aria-label': stripsDescription(rows),
-  }, groups);
+  }, groups, legend);
   let overlaid = false;
   const toggle = h('button', { type: 'button', class: 'btn btn--secondary', 'aria-pressed': 'false', 'data-act': 'overlay' },
     h('span', null, 'Übereinanderlegen'));
   const status = h('span', { class: 'strips-widget__status', 'aria-live': 'polite' });
 
+  function style(g, ri) {
+    const later = overlaid && ri > 0;
+    const q = (c) => g.querySelector(c);
+    q('.ov-bg').setAttribute('fill-opacity', later ? '0' : '1');
+    q('.ov-fill').setAttribute('fill-opacity', later ? '0.55' : '1');
+    q('.ov-ticks').setAttribute('opacity', later ? '0.4' : '1');
+    q('.ov-frame').setAttribute('opacity', later ? '0' : '1');
+    const f = q('.ov-fill');
+    f.setAttribute('stroke', later ? INK : 'none');
+    f.setAttribute('stroke-width', later ? '3' : '0');
+    f.setAttribute('stroke-dasharray', later ? '7 4' : '');
+    q('.ov-label').setAttribute('opacity', overlaid ? '0' : '1');
+  }
+
   function place(animate) {
     groups.forEach((g, i) => {
       const y = overlaid ? ys[0] : ys[i];
       g.setAttribute('transform', `translate(0 ${y})`);
-      g.setAttribute('opacity', overlaid && i > 0 ? '0.8' : '1');
+      style(g, i);
       if (animate && !reducedMotion() && typeof g.animate === 'function') {
         const from = overlaid ? ys[i] : ys[0];
         g.animate([{ transform: `translate(0px, ${from}px)` }, { transform: `translate(0px, ${y}px)` }], { duration: 320, easing: 'ease-out' });
       }
     });
-    svg.setAttribute('viewBox', `0 0 ${W} ${overlaid ? rowH + 8 : height}`);
+    if (overlaid) legend.removeAttribute('hidden');
+    else legend.setAttribute('hidden', '');
+    svg.setAttribute('viewBox', `0 0 ${W} ${overlaid ? stackedH : height}`);
     toggle.setAttribute('aria-pressed', String(overlaid));
     toggle.querySelector('span').textContent = overlaid ? 'Wieder auseinander' : 'Übereinanderlegen';
     status.textContent = overlaid ? 'Die Streifen liegen aufeinander.' : '';
@@ -343,7 +374,7 @@ function overlayStrips({ rows, onChange }) {
 // Gibt ein <div class="strips-widget"> mit dem SVG und den Knoepfen zurueck; getState() liefert den Zustand.
 export function strips(opts) {
   const { rows, interactive = 'fill', onChange } = opts;
-  if (interactive === 'split') return splitStrips({ rows, onChange });
+  if (interactive === 'split') return splitStrips({ rows, onChange, minParts: opts.minParts, maxParts: opts.maxParts });
   if (interactive === 'overlay') return overlayStrips({ rows, onChange });
   return fillStrips({ rows, onChange });
 }
