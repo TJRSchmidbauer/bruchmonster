@@ -527,3 +527,36 @@ h1:focus { outline: none; box-shadow: none; }
 .legal { margin-top: 1.5rem; text-align: center; opacity: 0.85; }
 .legal p { margin: 0.25rem 0; }
 .legal a { color: inherit; text-decoration: underline; display: inline-block; min-height: 44px; line-height: 44px; padding: 0 0.4rem; }
+
+/* Sichern und Mitbringen: Code, Ziehen und Ablegen, Erinnerung */
+.profile-row__backup { flex: 0 0 auto; opacity: 0.8; }
+.profile-row__code:empty, .backup__mount:empty { display: none; }
+.profile-row__actions > .btn--ghost { flex: 1 1 8rem; }
+.dropzone {
+  border: var(--line) dashed var(--ink);
+  border-radius: var(--r-card);
+  padding: var(--sp-4);
+  margin: var(--sp-2) 0 var(--sp-4);
+  text-align: center;
+  background: rgba(255, 255, 255, 0.6);
+}
+.dropzone--over { background: var(--lemon); border-style: solid; }
+.dropzone__hint { margin: 0 0 var(--sp-3); }
+@media (pointer: coarse) { .dropzone__hint { display: none; } }
+textarea.field.codebox__text {
+  padding: var(--sp-3) var(--sp-4);
+  min-height: 5.5rem;
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  resize: vertical;
+}
+.codebox { display: flex; flex-direction: column; gap: var(--sp-2); margin-top: var(--sp-3); }
+.codebox p { margin: 0; }
+.import .field__label { display: block; margin-bottom: var(--sp-2); }
+.import textarea { margin-bottom: var(--sp-3); }
+.backup-hint { margin-bottom: var(--sp-4); background: var(--lemon); }
+.backup-hint p { margin: var(--sp-2) 0 var(--sp-3); }
+.backup-hint__actions { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); }
+.backup-hint__actions .btn { flex: 1 1 10rem; }

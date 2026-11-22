@@ -2,6 +2,8 @@ import { createStore } from './core/storage.js';
 import { makeRng } from './core/rng.js';
 import { createUnsaved } from './core/unsaved.js';
 import { downloadProfile } from './ui/download.js';
+import { saveAsFile, copyCode } from './ui/backup.js';
+import { markBackedUp } from './core/backup.js';
 import { h, button } from './ui/dom.js';
 import { startRouter, registerScreen, go } from './ui/router.js';
 import { renderProfile } from './ui/screens/profile.js';
@@ -36,7 +38,7 @@ let toastTimer = null;
 const unsaved = createUnsaved();
 const saveBanner = h('div', { class: 'savebanner', role: 'alert', hidden: true },
   h('p', null, 'Speichern klappt gerade nicht – sichere deinen Spielstand als Datei.'),
-  button('Spielstand sichern', { variant: 'primary', onClick: () => { const p = unsaved.get(); if (p) downloadProfile(p); } }));
+  button('Als Datei sichern', { variant: 'primary', onClick: () => { const p = unsaved.get(); if (p) downloadProfile(p); } }));
 
 const app = {
   store,
@@ -59,9 +61,19 @@ const app = {
     unsaved.note(p, res);
     saveBanner.hidden = unsaved.get() === null;
   },
-  // Export des aktiven Profils aus dem Arbeitsspeicher (immer der aktuelle Stand).
+  // Merkt, dass dieses Profil gerade gesichert wird (Datum und Stand), und speichert es. Gibt das Profil zurueck.
+  recordBackup(p) {
+    const marked = markBackedUp(p, app.today());
+    if (app.profile?.id === marked.id) app.setProfile(marked);
+    else app.noteSave(marked, store.save(marked));
+    return marked;
+  },
+  // Sichern des aktiven Profils aus dem Arbeitsspeicher (immer der aktuelle Stand): als Datei oder als Code.
   exportProfile() {
-    if (app.profile) downloadProfile(app.profile);
+    if (app.profile) saveAsFile(app, app.profile);
+  },
+  copyCode(mount) {
+    return app.profile ? copyCode(app, app.profile, mount) : Promise.resolve(false);
   },
   openProfile(p) {
     app.profile = p;

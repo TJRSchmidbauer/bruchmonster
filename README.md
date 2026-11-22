@@ -38,8 +38,10 @@ Stoff: Bruchbegriff, Darstellen, Vergleichen, Erweitern und Kürzen, Addieren un
 
 Der Spielstand liegt im Speicher des Browsers. Wer den Verlauf löscht oder das Gerät wechselt, braucht eine Sicherung:
 
-- **Exportieren:** auf dem Profilbildschirm beim Profil „Exportieren“, oder im Hub „Spielstand sichern“. Es entsteht eine kleine `.json`-Datei.
-- **Importieren:** auf dem Profilbildschirm unter „Spielstand mitbringen“.
+- **Als Datei sichern:** auf dem Profilbildschirm beim Profil, im Hub oder beim Monster. Es entsteht eine kleine Sicherungsdatei, die nicht lesbar ist.
+- **Code kopieren:** Der Spielstand lässt sich auch als Text („Spielstand-Code“, beginnt mit `BM2-`) kopieren und zum Beispiel per Mail oder Chat an sich selbst schicken. Geht das Kopieren nicht, zeigt die App den Code zum Markieren an. Der Code ist dasselbe versiegelte Format wie die Datei.
+- **Zurückholen:** auf dem Profilbildschirm unter „Spielstand mitbringen“. Die Sicherungsdatei einfach auf das Feld ziehen (oder „Datei auswählen“), oder den Code in das Textfeld einfügen und „Code laden“ drücken. Zeilenumbrüche und Leerzeichen im Code stören nicht.
+- **Erinnerung:** Bei jedem Profil steht, wann zuletzt gesichert wurde. Nach etwa 20 neuen richtigen Antworten ohne Sicherung erinnert der Hub freundlich daran.
 - Kann der Browser nicht speichern (Privatmodus, gesperrter Speicher), weist die App darauf hin und bleibt benutzbar.
 
 ## Grenzen
@@ -61,7 +63,7 @@ Der Spielstand liegt im Speicher des Browsers. Wer den Verlauf löscht oder das 
 - Der Code benutzt kein `innerHTML`, kein `eval` und keine Laufzeit-Abhängigkeiten. Eingaben werden immer als Text gesetzt. Ein Test sucht den Quelltext nach solchen Stellen ab.
 - Importierte Spielstände werden geprüft: höchstens 200 KB, nur bekannte Feldformen, begrenzte Zahlen und Listen, bereinigte Namen.
 
-`npm test` und `python3 scripts/security-check.py` prüfen das, das zweite Skript im echten Browser, mit Angriffsversuchen.
+`npm test` und `python3 scripts/security-check.py` prüfen das, das zweite Skript im echten Browser, mit Angriffsversuchen. `python3 scripts/backup-check.py` prüft Sicherung, Code und Drag-and-drop im Browser.
 
 **Datei prüfen.** Wer die App herunterlädt, kann nachrechnen, ob sie unverändert ist, und den Wert mit [`dist/bruchmonster.html.sha256`](dist/bruchmonster.html.sha256) vergleichen:
 

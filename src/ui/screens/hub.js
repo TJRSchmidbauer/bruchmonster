@@ -5,6 +5,7 @@ import { recommend } from '../../core/recommend.js';
 import { KINDS } from '../../tasks/generators.js';
 import { WORLDS, worldByKey, motif, KIND_LABELS, WHY_TEXT } from '../worlds.js';
 import { monsterPreview } from '../monster/preview.js';
+import { backupButtons, backupHint } from '../backup.js';
 
 // Ein Stern pro Aufgabenart mit mindestens 5 richtigen Antworten.
 function stars(profile, key) {
@@ -45,9 +46,10 @@ export function renderHub(root, _params, app) {
           h('p', { class: 'bubble__text' }, `Heute hab ich Hunger auf: ${KIND_LABELS[rec.kind] ?? rec.kind} im ${recWorld.name}.`),
           h('p', { class: 'bubble__reason' }, WHY_TEXT[rec.why] ?? ''),
           button('Los geht’s', { variant: 'primary', onClick: () => go('world', { world: rec.world, kind: rec.kind }) }))),
+      backupHint(app, p),
       h('section', { class: 'hub__worlds', 'aria-label': 'Welten' },
         h('h2', { class: 'section-title' }, 'Wohin heute?'),
         h('ul', { class: 'tiles' }, tiles),
         button('Zum Monster', { variant: 'secondary', onClick: () => go('monster') }),
-        button('Spielstand sichern', { variant: 'ghost', 'data-act': 'export', onClick: () => app.exportProfile?.() }))));
+        ...backupButtons(app))));
 }

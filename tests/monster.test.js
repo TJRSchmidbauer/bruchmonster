@@ -365,19 +365,19 @@ test('Bewegung: bei reduzierter Bewegung keine Hop-Animation', () => {
   }
 });
 
-test('Monster-Bereich: "Spielstand sichern" exportiert das aktuelle Profil ueber app.exportProfile', () => {
+test('Monster-Bereich: "Als Datei sichern" exportiert das aktuelle Profil ueber app.exportProfile', () => {
   const { app, root, cleanup } = open(profile());
   let n = 0;
   app.exportProfile = () => { n += 1; };
   const btn = root.querySelector('[data-act="export"]');
   assert.ok(btn);
-  assert.match(btn.textContent, /Spielstand sichern/);
+  assert.match(btn.textContent, /Als Datei sichern/);
   click(btn);
   assert.equal(n, 1);
   cleanup();
 });
 
-test('Hub: "Spielstand sichern" ruft app.exportProfile auf', () => {
+test('Hub: "Als Datei sichern" ruft app.exportProfile auf', () => {
   const app = fakeApp(profile());
   let n = 0;
   app.exportProfile = () => { n += 1; };

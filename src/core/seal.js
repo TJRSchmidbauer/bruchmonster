@@ -7,6 +7,7 @@
 // Echte Faelschungssicherheit gibt es nur mit einem Server, den es hier bewusst nicht gibt.
 
 export const MAX_SEALED_CHARS = 200_000;
+export const MAX_CODE_CHARS = 60_000;
 const FORMAT = 'bruchmonster';
 const VERSION = 2;
 
@@ -170,4 +171,42 @@ export function unseal(text) {
   } catch {
     return fail('verfaelscht');
   }
+}
+
+// ---- Spielstand-Code: dasselbe Siegel als kurzer Text zum Kopieren und Einfuegen ----
+// Aufbau: "BM2-" + Base64 (URL-sicher) aus Nonce (12 Byte) | verschluesselte Daten | Pruefsumme (32 Byte).
+const CODE_PREFIX = 'BM2-';
+// Beim Einfuegen schleichen sich Umbrueche, Leerzeichen, geschweifte Anfuehrungszeichen u.a. ein.
+const CODE_NOISE = /[\s\u200B-\u200D\u2060\uFEFF"'\u201C\u201D\u201E\u2018\u2019\u201A\u00AB\u00BB<>]/g;
+const hexToBytes = (hex) => Uint8Array.from(hex.match(/../g), (h2) => parseInt(h2, 16));
+
+// Macht aus dem Datei-Text (seal) einen Code. Gibt null zurueck, wenn der Text kein Siegel ist.
+export function toCode(sealedText) {
+  if (typeof sealedText !== 'string' || sealedText.length > MAX_SEALED_CHARS) return null;
+  let doc;
+  try { doc = JSON.parse(sealedText); } catch { return null; }
+  if (doc === null || typeof doc !== 'object' || doc.format !== FORMAT || doc.version !== VERSION) return null;
+  if (typeof doc.n !== 'string' || typeof doc.d !== 'string' || typeof doc.m !== 'string' || !/^[0-9a-f]{64}$/.test(doc.m)) return null;
+  const nonce = fromB64(doc.n);
+  const cipher = fromB64(doc.d);
+  if (!nonce || !cipher || nonce.length !== 12) return null;
+  return CODE_PREFIX + toB64(concat(nonce, cipher, hexToBytes(doc.m))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+// Oeffnet einen Code. Wirft nie. Gruende: kein-code, zu-gross, verfaelscht (und die von unseal).
+export function unsealCode(code) {
+  const fail = (reason) => ({ ok: false, reason });
+  if (typeof code !== 'string') return fail('kein-code');
+  if (code.length > MAX_CODE_CHARS * 2) return fail('zu-gross');
+  const clean = code.replace(CODE_NOISE, '');
+  if (!clean.startsWith(CODE_PREFIX)) return fail('kein-code');
+  if (clean.length > MAX_CODE_CHARS) return fail('zu-gross');
+  const body = clean.slice(CODE_PREFIX.length).replace(/-/g, '+').replace(/_/g, '/');
+  if (body.length < 4 || !/^[A-Za-z0-9+/]+$/.test(body)) return fail('verfaelscht');
+  const bytes = fromB64(body + '='.repeat((4 - (body.length % 4)) % 4));
+  if (!bytes || bytes.length < 12 + 32) return fail('verfaelscht');
+  const nonce = bytes.slice(0, 12);
+  const mac = bytes.slice(bytes.length - 32);
+  const cipher = bytes.slice(12, bytes.length - 32);
+  return unseal(JSON.stringify({ format: FORMAT, version: VERSION, n: toB64(nonce), d: toB64(cipher), m: toHex(mac) }));
 }

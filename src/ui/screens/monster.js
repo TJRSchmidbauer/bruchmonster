@@ -9,6 +9,7 @@ import { renderWardrobe } from '../monster/wardrobe.js';
 import { renderCaveTab } from '../monster/cave-tab.js';
 import { renderCards } from '../monster/cards.js';
 import { keyed, price, profileMonster, hop, plural } from '../monster/kit.js';
+import { backupButtons } from '../backup.js';
 
 const TABS = [
   ['monster', 'Monster'],
@@ -188,7 +189,7 @@ export function renderMonster(root, params, app) {
       button('Zurück', { variant: 'ghost', onClick: () => go('hub') }),
       h('h1', { class: 'title' }, 'Mein Monster')),
     tablist, panel,
-    button('Spielstand sichern', { variant: 'ghost', 'data-act': 'export', onClick: () => app.exportProfile?.() })));
+    ...backupButtons(app)));
   ctx.rerender();
 
   return () => {

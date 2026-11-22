@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash, createHmac, randomBytes } from 'node:crypto';
-import { sha256, hmacSha256, seal, unseal, MAX_SEALED_CHARS } from '../src/core/seal.js';
+import { sha256, hmacSha256, seal, unseal, toCode, unsealCode, MAX_SEALED_CHARS, MAX_CODE_CHARS } from '../src/core/seal.js';
 
 const hex = (u8) => Array.from(u8, (b) => b.toString(16).padStart(2, '0')).join('');
 const utf8 = (s) => new TextEncoder().encode(s);
@@ -77,4 +77,46 @@ test('zu grosse Eingaben werden abgelehnt, bevor sie verarbeitet werden', () => 
 
 test('seal lehnt Werte ab, die kein JSON sind (kein stilles undefined)', () => {
   assert.throws(() => seal(undefined));
+});
+
+// ---- Spielstand-Code (zum Kopieren und Einfuegen) ----
+test('Code: Rundreise, nur sichere Zeichen, deutlich kuerzer als die Datei', () => {
+  const v = { name: 'Zoë 🦄', coins: 12, list: Array.from({ length: 40 }, (_, i) => `item${i}`) };
+  const sealed = seal(v);
+  const code = toCode(sealed);
+  assert.match(code, /^BM2-[A-Za-z0-9_-]+$/);
+  assert.ok(code.length < sealed.length, `${code.length} < ${sealed.length}`);
+  assert.deepEqual(unsealCode(code), { ok: true, value: v });
+});
+
+test('Code: Zeilenumbrueche, Leerzeichen, Anfuehrungszeichen und unsichtbare Zeichen vom Einfuegen schaden nicht', () => {
+  const v = { name: 'Mia', coins: 7 };
+  const code = toCode(seal(v));
+  const wrapped = code.replace(/(.{20})/g, '$1\n');
+  for (const text of [wrapped, `  ${code}  `, `"${code}"`, `\u201C${code}\u201D`, `\u200B${code}\uFEFF`, `<${code}>`, code.replace(/(.{30})/g, '$1 \r\n ')]) {
+    assert.deepEqual(unsealCode(text), { ok: true, value: v }, JSON.stringify(text.slice(0, 30)));
+  }
+});
+
+test('Code: jede Veraenderung wird erkannt', () => {
+  const code = toCode(seal({ name: 'Mia', coins: 7 }));
+  for (let i = 4; i < code.length; i += 3) {
+    const c = code[i] === 'A' ? 'B' : 'A';
+    assert.equal(unsealCode(code.slice(0, i) + c + code.slice(i + 1)).ok, false, `Stelle ${i}`);
+  }
+  assert.equal(unsealCode(code.slice(0, -4)).ok, false, 'abgeschnitten');
+  assert.equal(unsealCode(code + 'AAAA').ok, false, 'verlaengert');
+});
+
+test('Code: Muell, fremde Texte und zu grosse Eingaben werden abgelehnt, ohne zu werfen', () => {
+  assert.deepEqual(unsealCode('hallo'), { ok: false, reason: 'kein-code' });
+  assert.deepEqual(unsealCode(''), { ok: false, reason: 'kein-code' });
+  assert.deepEqual(unsealCode(seal({ a: 1 })), { ok: false, reason: 'kein-code' }, 'Datei-Inhalt ist kein Code');
+  assert.equal(unsealCode('BM2-').ok, false);
+  assert.equal(unsealCode('BM2-' + '!'.repeat(50)).ok, false);
+  assert.equal(unsealCode('BM1-' + 'A'.repeat(100)).ok, false);
+  assert.deepEqual(unsealCode('BM2-' + 'A'.repeat(MAX_CODE_CHARS + 1)), { ok: false, reason: 'zu-gross' });
+  for (const junk of [null, undefined, 5, {}, []]) assert.equal(unsealCode(junk).ok, false);
+  assert.equal(toCode('kein json'), null);
+  assert.equal(toCode(JSON.stringify({ format: 'bruchmonster', version: 2 })), null);
 });

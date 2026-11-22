@@ -69,7 +69,7 @@ with sync_playwright() as p:
     # deshalb nutzen wir den Export des frischen Profils und pruefen Struktur und Rundreise.
     pg.click('.topbar__name'); pg.wait_for_timeout(300)
     with pg.expect_download() as dl:
-        pg.click('text=Exportieren')
+        pg.click('.profile-row >> text=Als Datei sichern')
     path = dl.value.path()
     text = pathlib.Path(path).read_text()
     doc = json.loads(text)

@@ -380,7 +380,7 @@ def run():
         audit(page, 'Profil (mit Eintrag)')
         shot(page, 'profil-liste', widths=(390,))
         with page.expect_download() as dl:
-            page.get_by_role('button', name='Mia exportieren').click()
+            page.get_by_role('button', name='Mia als Datei sichern').click()
         tmp = pathlib.Path(tempfile.mkdtemp()) / 'export.json'
         dl.value.save_as(str(tmp))
         raw = tmp.read_text()

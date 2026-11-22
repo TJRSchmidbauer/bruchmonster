@@ -1,7 +1,7 @@
 // Profile und Speicher: Anlegen, Laden, Speichern, Export/Import.
 // Reine Logik ohne UI. Standard-Backend ist localStorage, Fallback ist der Speicher im Arbeitsspeicher.
 
-import { seal, unseal } from './seal.js';
+import { seal, unseal, toCode, unsealCode } from './seal.js';
 
 const INDEX_KEY = 'bruchmonster:profiles';
 const INDEX_BAK_KEY = 'bruchmonster:profiles.bak';
@@ -41,6 +41,7 @@ export function defaultProfile(name, id = newId(), createdAt = new Date().toISOS
     mastery: {},
     daily: {},
     streak: { days: 0, lastDate: '' },
+    backup: { date: '', right: 0 },
     color: 'kiwi',
     createdAt,
   };
@@ -88,6 +89,12 @@ function fillProfile(raw, id, createdAt) {
     out.streak = {
       days: isNonNeg(raw.streak.days) ? num(raw.streak.days) : 0,
       lastDate: isDate(raw.streak.lastDate) ? raw.streak.lastDate : '',
+    };
+  }
+  if (isObj(raw.backup)) {
+    out.backup = {
+      date: isDate(raw.backup.date) ? raw.backup.date : '',
+      right: isNonNeg(raw.backup.right) ? num(raw.backup.right) : 0,
     };
   }
   if (isId(raw.color)) out.color = raw.color;
@@ -251,14 +258,28 @@ export function exportProfile(p) {
   return seal({ profile: p, exportedAt: new Date().toISOString() });
 }
 
-// Liest eine Export-Datei. Das Ergebnis bekommt immer eine neue id und ist noch nicht gespeichert.
-// Gründe: kein-json, falsches-format (auch das alte Klartext-Format), verfaelscht, zu-gross, beschaedigt.
-export function importProfile(text, makeId = newId) {
+// Dasselbe Siegel als kurzer Text zum Kopieren und Einfuegen (siehe seal.js).
+export function exportCode(p) {
+  return toCode(exportProfile(p));
+}
+
+// Macht aus einem geoeffneten Siegel ein Profil mit neuer id. Noch nicht gespeichert.
+function profileFromOpened(opened, makeId) {
   const fail = (reason) => ({ ok: false, reason });
-  const opened = unseal(text);
   if (!opened.ok) return fail(opened.reason);
   if (!isObj(opened.value) || !isObj(opened.value.profile)) return fail('beschaedigt');
   const profile = fillProfile(opened.value.profile, makeId(), new Date().toISOString());
   if (!profile) return fail('beschaedigt');
   return { ok: true, profile };
+}
+
+// Liest eine Export-Datei. Das Ergebnis bekommt immer eine neue id und ist noch nicht gespeichert.
+// Gruende: kein-json, falsches-format (auch das alte Klartext-Format), verfaelscht, zu-gross, beschaedigt.
+export function importProfile(text, makeId = newId) {
+  return profileFromOpened(unseal(text), makeId);
+}
+
+// Liest einen eingefuegten Spielstand-Code. Gruende wie oben, dazu kein-code.
+export function importProfileFromCode(code, makeId = newId) {
+  return profileFromOpened(unsealCode(code), makeId);
 }
