@@ -267,3 +267,33 @@ test('Tageslimit: capped wird durchgereicht', () => {
   assert.equal(res.capped, true);
   assert.equal(r.state().solved, true);
 });
+
+test('nicht-gekuerzt: richtig aber ungekuerzt ist kein Fehlversuch', () => {
+  const { r, updates } = make('kuerzen', 1);
+  const t = r.current();
+  const v = t.answer.value;
+  const n = updates.length;
+  const res = r.submit(`${v.n * 2}/${v.d * 2}`);
+  assert.equal(res.correct, false);
+  assert.equal(res.note, 'nicht-gekuerzt');
+  assert.equal(res.coins, 0);
+  assert.equal(r.state().wrongAttempts, 0);
+  assert.equal(r.state().sessionStreak, 0);
+  assert.equal(updates.length, n, 'keine Profilaenderung');
+  const ok = r.submit(format(v));
+  assert.equal(ok.correct, true);
+  assert.ok(ok.coins >= 1);
+});
+
+test('nicht-gekuerzt: Serie bleibt erhalten und Mastery zaehlt keinen Fehler', () => {
+  const { r, last } = make('kuerzen', 1);
+  const t1 = r.current();
+  r.submit(format(t1.answer.value));
+  r.next();
+  const t2 = r.current();
+  const streak = r.state().sessionStreak;
+  const v = t2.answer.value;
+  r.submit(`${v.n * 2}/${v.d * 2}`);
+  assert.equal(r.state().sessionStreak, streak);
+  assert.equal(last().mastery.kuerzen.wrong, 0);
+});

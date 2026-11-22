@@ -5,6 +5,7 @@ import { KINDS } from '../../tasks/generators.js';
 import { worldByKey, KIND_LABELS, LEVELS, kindStars } from '../worlds.js';
 import { createRunner } from '../runner.js';
 import { createTaskView } from './taskview.js';
+import { EXPERIMENTS, experimentView } from '../experiments.js';
 
 const ROUND = 5;
 const levelMemory = {};
@@ -23,10 +24,11 @@ export function renderWorld(root, params, app) {
   let view = null;
   let session = null;
   let kind = null;
+  let mode = 'list';
 
   const body = h('div', { class: 'world__body' });
   const title = h('h1', { class: 'title world__title' }, w.name);
-  const back = button('Zurück', { variant: 'ghost', onClick: () => (runner ? showList() : go('hub')) });
+  const back = button('Zurück', { variant: 'ghost', onClick: () => (mode === 'list' ? go('hub') : showList()) });
   const backLabel = back.querySelector('span');
   root.append(h('div', { class: 'screen screen--world', style: `--world:${w.color}` },
     h('header', { class: 'world__head' }, back, title), body));
@@ -35,6 +37,7 @@ export function renderWorld(root, params, app) {
     view?.destroy();
     runner = null;
     view = null;
+    mode = 'list';
     backLabel.textContent = 'Zur Karte';
     const p = app.profile;
     const levelBtns = LEVELS.map((l) => h('button', {
@@ -53,13 +56,41 @@ export function renderWorld(root, params, app) {
         h('div', { class: 'levels', role: 'group', 'aria-labelledby': 'lvl-h' }, levelBtns)),
       h('section', { 'aria-labelledby': 'kind-h' },
         h('h2', { class: 'section-title', id: 'kind-h' }, 'Was üben wir?'),
-        h('ul', { class: 'kinds' }, KINDS[w.key].map((k) => h('li', null,
-          h('button', { type: 'button', class: 'kind', onclick: () => start(k) },
+        h('ul', { class: 'kinds' }, KINDS[w.key].map((k) => h('li', { class: 'kinds__item' },
+          h('button', { type: 'button', class: 'kind', onclick: () => open(k) },
             h('span', { class: 'kind__name' }, KIND_LABELS[k] ?? k),
-            stars(kindStars(p.mastery[k]))))))));
+            stars(kindStars(p.mastery[k]))),
+          EXPERIMENTS[k]
+            ? h('button', { type: 'button', class: 'linkbtn', 'aria-label': `Experiment nochmal: ${KIND_LABELS[k] ?? k}`, onclick: () => showExperiment(k) }, 'Experiment nochmal')
+            : null)))));
+  }
+
+  // Neues Thema mit Experiment: erst ausprobieren, dann die Aufgaben.
+  function open(k) {
+    if (EXPERIMENTS[k] && !(app.profile.seen ?? []).includes(k)) showExperiment(k);
+    else start(k);
+  }
+
+  function showExperiment(k) {
+    view?.destroy();
+    runner = null;
+    view = null;
+    mode = 'experiment';
+    kind = k;
+    backLabel.textContent = 'Zur Liste';
+    const el = experimentView(k, {
+      onDone: () => {
+        const seen = app.profile.seen ?? [];
+        if (!seen.includes(k)) app.setProfile({ ...app.profile, seen: [...seen, k] });
+        start(k);
+      },
+    });
+    body.replaceChildren(h('p', { class: 'world__sub' }, `${KIND_LABELS[k] ?? k} · Ausprobieren`), el);
+    el.querySelector('h2')?.focus();
   }
 
   function start(k) {
+    mode = 'tasks';
     kind = k;
     levelMemory[w.key] = level;
     session = { size: ROUND, done: 0, coins: 0, right: 0 };
@@ -111,7 +142,7 @@ export function renderWorld(root, params, app) {
     body.querySelector('#sum-h')?.focus();
   }
 
-  if (params.kind && KINDS[w.key].includes(params.kind)) start(params.kind);
+  if (params.kind && KINDS[w.key].includes(params.kind)) open(params.kind);
   else showList();
   return () => view?.destroy();
 }

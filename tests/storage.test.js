@@ -286,3 +286,16 @@ test('save ersetzt bestehenden Eintrag an Ort und Stelle und normalisiert den Na
   ]);
   assert.equal(store.load(a.id).name, 'Umbenannt');
 });
+
+test('seen: Standard leer, fehlend wird [], falscher Typ ist beschaedigt, bleibt beim Export erhalten', () => {
+  assert.deepEqual(defaultProfile('Mia', 'p1').seen, []);
+  const base = defaultProfile('Mia', 'p1');
+  const { seen, ...noSeen } = base;
+  const ok = importProfile(JSON.stringify({ format: 'bruchmonster', version: 1, profile: noSeen }));
+  assert.equal(ok.ok, true);
+  assert.deepEqual(ok.profile.seen, []);
+  const bad = importProfile(JSON.stringify({ format: 'bruchmonster', version: 1, profile: { ...base, seen: [1] } }));
+  assert.equal(bad.ok, false);
+  const good = importProfile(exportProfile({ ...base, seen: ['platzieren'] }));
+  assert.deepEqual(good.profile.seen, ['platzieren']);
+});

@@ -27,9 +27,9 @@ export function h(tag, attrs, ...children) {
 
 // Eine einzige, unsichtbare Live-Region.
 export function announce(text) {
-  let region = document.querySelector('[aria-live="polite"]');
+  let region = document.getElementById('sr-announcer');
   if (!region) {
-    region = h('div', { class: 'sr-only', 'aria-live': 'polite', role: 'status' });
+    region = h('div', { id: 'sr-announcer', class: 'sr-only', 'aria-live': 'polite', role: 'status' });
     document.body.append(region);
   }
   region.textContent = text;
@@ -44,6 +44,11 @@ const WORDS = {
 function spoken(n, d) {
   if (d === 1) return `${n} Ganze`;
   return WORDS[d] ? `${n} ${WORDS[d]}` : `${n} von ${d}`;
+}
+
+// Gesprochener Bruch fuer aria-Texte: "3 Viertel", "1 Ganzes und 1 Halbe".
+export function spokenFrac(f, mixed = true) {
+  return label(f, mixed && f.d > 1);
 }
 
 function label(f, mixed) {

@@ -3,11 +3,11 @@ import { h, button, announce } from '../dom.js';
 import { richText } from '../richtext.js';
 import { explainView } from '../widgets/explain.js';
 import { inputWidget, choiceWidget, markWidget } from '../widgets/basic.js';
+import { numberlineWidget, stripsWidget } from '../widgets/interactive.js';
 import { monsterPreview } from '../monster/preview.js';
 import { describe } from '../../tasks/errors.js';
 
-// Task 9 nimmt numberline und strips hinzu.
-export const SUPPORTED = new Set(['input', 'choice', 'mark']);
+export const SUPPORTED = new Set(['input', 'choice', 'mark', 'numberline', 'strips']);
 
 export const INVALID_TEXT = {
   leer: 'Da steht ja noch nichts.',
@@ -34,6 +34,15 @@ const WRONG_LINES = [
 const IDLE = 'Na los, ich knurre schon vor Hunger.';
 
 const reduced = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+// Erklaerzeichnung oder null: fehlt explain oder ist es unbekannt, wird einfach nichts gezeichnet.
+function safeExplain(explain, opts) {
+  if (!explain || (explain.type !== 'strips' && explain.type !== 'numberline') || !explain.data) return null;
+  try {
+    return explainView(explain, opts);
+  } catch {
+    return null;
+  }
+}
 const pickFrom = (rng, arr) => arr[Math.floor(rng() * arr.length)];
 
 function makeWidget(task, onSubmit) {
@@ -41,6 +50,8 @@ function makeWidget(task, onSubmit) {
     case 'input': return inputWidget(onSubmit);
     case 'choice': return choiceWidget(task.widget.data.options);
     case 'mark': return markWidget(task.widget.data.steps);
+    case 'numberline': return numberlineWidget(task.widget.data, onSubmit);
+    case 'strips': return stripsWidget(task.widget.data, onSubmit);
     default: return null;
   }
 }
@@ -99,6 +110,12 @@ export function createTaskView(ctx) {
     widget.setDisabled(disabled);
   }
 
+  // Nach dem dritten Tipp ohne Fehlversuch bleibt sonst nur Raten: hier gibt es die Loesung.
+  function revealLink() {
+    if (!runner.canReveal()) return null;
+    return h('p', { class: 'bubble__more' }, button('Lösung zeigen', { variant: 'ghost', onClick: reveal }));
+  }
+
   function updateHintButton() {
     const used = runner.state().hintsUsed;
     hintBtn.querySelector('span').textContent = used >= 3 ? 'Kein Tipp mehr' : used === 0 ? 'Tipp' : `Tipp ${used + 1}`;
@@ -145,28 +162,39 @@ export function createTaskView(ctx) {
     announce(`${title} ${res.coins > 0 ? `${res.coins} Münzen.` : ''}`);
   }
 
-  function showWrong(res) {
+  function showWrong(res, sent) {
+    const task = runner.current();
     let text = NOTE_TEXT[res.note] ?? pickFrom(app.rng, WRONG_LINES);
     let extra = null;
     if (res.mistake) {
       const info = describe(res.mistake);
       text = info.text;
-      extra = h('div', { class: 'sheet__drawing' }, explainView(info.counter));
+      const drawing = safeExplain(info.counter);
+      extra = drawing ? h('div', { class: 'sheet__drawing' }, drawing) : null;
+    } else if (!res.note && task.answer.type === 'position') {
+      // Falsche Position: zeigen, wo der Bruch liegt, und auf welcher Seite der Punkt daneben stand.
+      const x = task.answer.value.n / task.answer.value.d;
+      if (typeof sent === 'number') text = `${sent < x ? 'Zu weit links' : 'Zu weit rechts'}. ${text}`;
+      const drawing = safeExplain(task.explain);
+      extra = drawing ? h('div', { class: 'sheet__drawing' }, drawing) : null;
     }
     const buttons = [retryBtn()];
     if (runner.canReveal()) buttons.push(button('Lösung zeigen', { onClick: reveal }));
     buttons.push(button('Nächste Aufgabe', { variant: 'ghost', onClick: () => { closeSheet(); ctx.onNext(); } }));
-    openSheet({ tone: 'wrong', title: 'Nicht ganz.', text, extra, buttons });
+    openSheet({ tone: 'wrong', title: res.note ? 'Fast!' : 'Nicht ganz.', text, extra, buttons });
   }
 
   function reveal() {
     const rev = runner.reveal();
     if (!rev) return;
+    busy = true;
+    setControls(true);
     const task = runner.current();
+    const drawing = safeExplain(task.explain);
     openSheet({
       tone: 'info', title: 'So geht’s:',
       text: `Richtig wäre: ${rev.answerText}. ${rev.steps}`,
-      extra: h('div', { class: 'sheet__drawing' }, explainView(task.explain)),
+      extra: drawing ? h('div', { class: 'sheet__drawing' }, drawing) : null,
       buttons: [nextBtn()],
     });
   }
@@ -187,7 +215,7 @@ export function createTaskView(ctx) {
     } else if (res.correct) {
       showCorrect(res);
     } else {
-      showWrong(res);
+      showWrong(res, v);
     }
   }
 
@@ -199,7 +227,8 @@ export function createTaskView(ctx) {
     bubble.replaceChildren(
       h('p', { class: 'bubble__label' }, `Tipp ${n} von 3`),
       h('p', { class: 'bubble__text bubble__text--hint' }, richText(text)),
-      n === 2 && task.explain ? h('div', { class: 'bubble__drawing' }, explainView(task.explain)) : null);
+      n === 2 && safeExplain(task.explain) ? h('div', { class: 'bubble__drawing' }, safeExplain(task.explain)) : null,
+      revealLink());
     announce(`Tipp ${n}: ${text}`);
     updateHintButton();
   }

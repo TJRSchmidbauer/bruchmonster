@@ -28,6 +28,7 @@ export function defaultProfile(name, id = newId(), createdAt = new Date().toISOS
     wearing: {},
     cave: [],
     cards: [],
+    seen: [],
     mastery: {},
     daily: {},
     streak: { days: 0, lastDate: '' },
@@ -56,7 +57,7 @@ function fillProfile(raw, id, createdAt) {
       out[k] = raw[k];
     }
   }
-  for (const k of ['owned', 'cave', 'cards']) {
+  for (const k of ['owned', 'cave', 'cards', 'seen']) {
     if (raw[k] !== undefined) {
       if (!isStrArr(raw[k])) return null;
       out[k] = raw[k];
