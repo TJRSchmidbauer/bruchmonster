@@ -34,7 +34,7 @@ export function generate(kind, level, rng) {
   return fn(level, rng);
 }
 
-// Aufgabenmischer: fuer Alltag und Detektiv mischt er handgeschriebene Aufgaben (40 %) unter die generierten.
+// Aufgabenmischer: fuer Alltag und Detektiv mischt er handgeschriebene Aufgaben (40 %, auf Stufe 3 nur 20 %) unter die generierten.
 const HW_SHARE = 0.4;
 const HW_MEMORY = 5;
 const recent = {};
@@ -47,7 +47,7 @@ export function pickTask(kind, level, rng) {
   const key = `${kind}:${level}`;
   const seen = recent[key] ?? (recent[key] = []);
   const free = pool.filter((t) => t.id !== lastId[key] && !seen.includes(t.id));
-  if (rng() >= HW_SHARE || free.length === 0) {
+  if (rng() >= (level === 3 ? HW_SHARE / 2 : HW_SHARE) || free.length === 0) {
     lastId[key] = null;
     return generate(kind, level, rng);
   }

@@ -1,6 +1,6 @@
 // Welt "Detektiv": fehler-finden (falsche Zeile in einer Rechnung), regel-entdecken (Vermutung waehlen).
 import { randInt, pick, shuffle } from '../../core/rng.js';
-import { frac, simplify, gcd, lcm, expand, format, formatMixed, add } from '../../core/fractions.js';
+import { frac, simplify, gcd, lcm, expand, format, formatMixed, add, sub } from '../../core/fractions.js';
 import { makeTask } from '../types.js';
 import { retry, properFrac, mixedFrac, stripRows, stripsExplain, lineExplain } from './shared.js';
 
@@ -120,6 +120,7 @@ function mixedAdd(rng) {
     const wb = randInt(rng, 1, 4);
     const L = lcm(pa.d, pb.d);
     if (pa.d === pb.d || L > 30) return null;
+    if (simplify(pa).d !== pa.d || simplify(pb).d !== pb.d) return null;
     return { pa, pb, wa, wb, L };
   });
 }
@@ -159,10 +160,68 @@ function hauptnennerNurNenner(rng) {
   };
 }
 
+// Stufe 3: Subtraktion gemischter Zahlen, Brüche vertauscht statt ein Ganzes aufzubrechen.
+function entbuendelnFalsch(rng) {
+  const { pa, pb, wa, wb, L } = retry(() => {
+    const x = properFrac(rng, 3, 12);
+    const y = properFrac(rng, 3, 12);
+    if (simplify(x).d !== x.d || simplify(y).d !== y.d || x.d === y.d) return null;
+    if (x.n / x.d >= y.n / y.d) return null;
+    const l = lcm(x.d, y.d);
+    const w1 = randInt(rng, 3, 6);
+    const w2 = randInt(rng, 1, w1 - 1);
+    return l <= 30 ? { pa: x, pb: y, wa: w1, wb: w2, L: l } : null;
+  });
+  const A = mixed(wa, pa);
+  const B = mixed(wb, pb);
+  const swapped = simplify(sub(pb, pa));
+  const sx = (swapped.n * L) / swapped.d;
+  const res = simplify(sub(A, B));
+  return {
+    steps: [`${formatMixed(A)} − ${formatMixed(B)}`, `= ${wa - wb} + (${format(pb)} − ${format(pa)})`, `= ${wa - wb} + ${sx}/${L}`, `= ${formatMixed(simplify(add(frac(wa - wb, 1), swapped)))}`],
+    wrong: 1, a: A, b: B, op: 'sub',
+    why: `${format(pa)} ist kleiner als ${format(pb)}. Man darf die Brüche nicht vertauschen, sondern bricht ein Ganzes auf: ${formatMixed(A)} = ${wa - 1} ${pa.n + pa.d}/${pa.d}.`,
+    right: formatMixed(res),
+    tip: 'Prüfe mit einer Überschlagsrechnung: Ist das Ergebnis kleiner oder größer als die Differenz der Ganzen?',
+    explain: lineExplain([B, A, res]),
+  };
+}
+
+// Stufe 3: alles richtig bis zum Schluss, dann Zähler und Nenner durch verschiedene Zahlen geteilt.
+function kuerzenFalschAmEnde(rng) {
+  return retry(() => {
+    const a = properFrac(rng, 2, 12);
+    const b = properFrac(rng, 2, 12);
+    if (simplify(a).d !== a.d || simplify(b).d !== b.d || a.d === b.d) return null;
+    const L = lcm(a.d, b.d);
+    if (L > 36) return null;
+    const x = (a.n * L) / a.d;
+    const y = (b.n * L) / b.d;
+    const S = x + y;
+    const g = gcd(S, L);
+    if (g < 2) return null;
+    const others = [];
+    for (let t = 2; t < L; t++) if (L % t === 0 && t !== g && S % t !== 0) others.push(t);
+    if (others.length === 0) return null;
+    const g2 = pick(rng, others);
+    const wrongF = frac(S / g, L / g2);
+    const right = simplify(frac(S, L));
+    if (format(wrongF) === format(right) || wrongF.n % wrongF.d === 0 || (wrongF.n > wrongF.d) !== (right.n > right.d)) return null;
+    return {
+      steps: [`${format(a)} + ${format(b)}`, `= ${x}/${L} + ${y}/${L}`, `= ${S}/${L}`, `= ${format(wrongF)}`],
+      wrong: 3, a, b, op: 'reduce', k: g,
+      why: `Beim Kürzen teilt man Zähler und Nenner durch dieselbe Zahl. Hier wurde ${S} durch ${g}, aber ${L} durch ${g2} geteilt.`,
+      right: format(right),
+      tip: 'Die ersten Zeilen sehen gut aus. Prüfe auch die letzte: Ist der Wert nach dem Kürzen noch derselbe?',
+      explain: lineExplain([right, wrongF]),
+    };
+  });
+}
+
 const FEHLER = {
   1: [addNennerGleich, erweiternNurZaehler, kuerzenNurZaehler],
   2: [addNennerUngleich, erweiternNurZaehler, kuerzenNurZaehler, malNennerGleich, teilenNennerGeteilt],
-  3: [umwandelnFalsch, hauptnennerNurNenner, malNennerGleich, teilenNennerGeteilt, addNennerUngleich],
+  3: [umwandelnFalsch, hauptnennerNurNenner, entbuendelnFalsch, kuerzenFalschAmEnde, teilenNennerGeteilt],
 };
 
 export function fehlerFinden(level, rng) {

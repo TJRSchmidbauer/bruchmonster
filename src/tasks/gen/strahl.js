@@ -67,15 +67,23 @@ export function platzieren(level, rng) {
   });
 }
 
+// Stufe 1: bis 1, Hilfsmarke 1/2, großzügig. Stufe 2: ohne Marke, enger.
+// Stufe 3: bis 2, krumme Nenner (7, 9, 11, 13 …), Wert nie nahe an einem Viertel, sehr eng.
 export function schaetzen(level, rng) {
-  const dMax = { 1: 12, 2: 20, 3: 60 }[level];
   const to = level === 3 ? 2 : 1;
   const f = retry(() => {
-    const d = randInt(rng, 2, dMax);
+    const d = level === 3 ? pick(rng, [7, 9, 11, 13, 14, 15, 17, 19, 21, 23]) : randInt(rng, 2, level === 1 ? 12 : 20);
     const n = randInt(rng, 1, to * d - 1);
-    return n % d === 0 ? null : frac(n, d);
+    if (n % d === 0) return null;
+    const g = frac(n, d);
+    if (level === 2 && simplify(g).d < 5) return null;
+    if (level === 3) {
+      const q = (4 * n) / d;
+      if (Math.abs(q - Math.round(q)) < 0.25) return null;
+    }
+    return g;
   });
-  const tolerance = { 1: 0.08, 2: 0.06, 3: 0.05 }[level];
+  const tolerance = { 1: 0.08, 2: 0.05, 3: 0.04 }[level];
   const half = frac(1, 2);
   return makeTask(rng, {
     world: WORLD, kind: 'schaetzen', level,

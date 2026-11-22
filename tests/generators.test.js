@@ -176,7 +176,7 @@ test('Positionsaufgaben: Toleranz', () => {
   assert.equal(checkAnswer(t, x + t.answer.tolerance * 1.5).correct, false);
   assert.equal(t.answer.tolerance, 1 / (2 * t.widget.data.ticks));
   const s = generate('schaetzen', 3, makeRng(5));
-  assert.equal(s.answer.tolerance, 0.05);
+  assert.equal(s.answer.tolerance, 0.04);
   assert.equal(s.widget.data.ticks, 0);
 });
 
@@ -309,4 +309,41 @@ test('Schwierigkeit: dazwischen Stufe 3 sind direkte Nachbarn', () => {
     const { a, b } = generate('dazwischen', 3, makeRng(seed)).meta;
     assert.equal(b.n * a.d - a.n * b.d, a.d === b.d ? a.d : 1);
   }
+});
+
+test('Schwierigkeit: erweitern Stufe 3 verlangt erst kürzen', () => {
+  for (let seed = 0; seed < 200; seed++) {
+    const t = generate('erweitern', 3, makeRng(seed));
+    const { a, targetD } = t.meta;
+    assert.notEqual(targetD % a.d, 0, 'Zielnenner kein Vielfaches');
+    assert.ok(checkAnswer(t, `${t.answer.value.n}/${t.answer.value.d}`).correct);
+  }
+});
+
+test('Schwierigkeit: kürzen Stufe 3 mit großem Faktor', () => {
+  for (let seed = 0; seed < 200; seed++) {
+    const { k } = generate('kuerzen', 3, makeRng(seed)).meta;
+    assert.ok(k >= 12);
+  }
+});
+
+test('Schwierigkeit: Bruchteil Stufe 3 lässt sich über Kreuz kürzen', () => {
+  for (let seed = 0; seed < 200; seed++) {
+    const { a, b } = generate('bruchteil-vom-bruchteil', 3, makeRng(seed)).meta;
+    const g = (x, y) => (y ? g(y, x % y) : x);
+    assert.ok(g(a.n, b.d) > 1 || g(b.n, a.d) > 1);
+  }
+});
+
+test('Schwierigkeit: Rückwärts-Anteil liefert das Ganze', () => {
+  let seen = 0;
+  for (let seed = 0; seed < 200; seed++) {
+    const t = generate('anteil-von-groesse', 3, makeRng(seed));
+    if (!t.prompt.includes('insgesamt')) continue;
+    seen++;
+    const { a, quantity } = t.meta;
+    const w = t.answer.value;
+    assert.equal(a.n * w.n * 1, quantity.value * a.d * w.d, `${a.n}/${a.d} von ${w.n}/${w.d} = ${quantity.value}`);
+  }
+  assert.ok(seen > 50);
 });
