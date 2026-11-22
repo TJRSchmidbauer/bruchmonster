@@ -32,7 +32,7 @@ export async function build() {
   });
   // Verhindert, dass das Bundle das <script>-Tag vorzeitig beendet.
   const js = result.outputFiles[0].text.replace(/<\/script/gi, '<\\/script');
-  const css = (fontFaces() + '\n' + readFileSync(join(root, 'src/styles.css'), 'utf8')).replace(/<\/style/gi, '<\\/style');
+  const css = (fontFaces() + '\n' + ['styles.css', 'styles-monster.css'].map((f) => readFileSync(join(root, 'src', f), 'utf8')).join('\n')).replace(/<\/style/gi, '<\\/style');
   const template = readFileSync(join(root, 'src/index.html'), 'utf8');
   // Funktionen als Ersatz, damit "$&" etc. in js/css nicht interpretiert werden.
   const html = template.replace('<!--CSS-->', () => css).replace('<!--JS-->', () => js);

@@ -2,7 +2,7 @@
 import { toMixed } from '../core/fractions.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const SVG_TAGS = new Set(['svg', 'path', 'rect', 'circle', 'g', 'line', 'text', 'ellipse', 'polygon']);
+const SVG_TAGS = new Set(['svg', 'path', 'rect', 'circle', 'g', 'line', 'text', 'ellipse', 'polygon', 'polyline', 'defs', 'clipPath', 'title', 'tspan']);
 
 function append(el, child) {
   if (child == null || child === false) return;

@@ -6,7 +6,7 @@ export const CAVE_MAX = 8;
 export const DEFAULT_COLOR = 'kiwi';
 
 const BASE_REWARD = { 1: 2, 2: 3, 3: 5 };
-const STAGE_XP = [0, 30, 100, 250, 500];
+export const STAGE_XP = [0, 30, 100, 250, 500];
 const CARD_WEIGHT = { normal: 6, selten: 3, legendaer: 1 };
 const DAY_MS = 86400000;
 

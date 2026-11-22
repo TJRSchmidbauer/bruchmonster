@@ -1,0 +1,187 @@
+/* ==========================================================================
+   Monster-Bereich: Tabs, Monster, Shop, Schrank, Hoehle, Sammelkarten
+   ========================================================================== */
+.main:has(.screen--monster) { max-width: 960px; }
+@media (min-width: 900px) { .topbar { max-width: 960px; } }
+
+.screen--monster { gap: var(--sp-4); }
+.monster__head { display: flex; align-items: center; gap: var(--sp-2); }
+.monster__head .btn--ghost { padding: 0 var(--sp-2); min-height: 44px; }
+.monster__head .title { font-size: var(--fs-xl); }
+
+/* Zeichnungen */
+.monster-svg, .overlay__monster { display: block; width: 100%; height: auto; overflow: visible; }
+.thumb { display: block; width: 100%; height: 100%; overflow: hidden; }
+
+/* Tabs */
+.tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--sp-2); }
+.tab {
+  min-height: 48px; padding: 0 2px;
+  background: var(--paper); color: var(--ink);
+  border: var(--line) solid var(--ink); border-radius: 14px; box-shadow: 3px 3px 0 var(--ink);
+  font-family: var(--font-display); font-weight: 700; font-size: 0.8125rem; line-height: 1.1; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.tab[aria-selected='true'] { background: var(--lemon); box-shadow: 1px 1px 0 var(--ink); transform: translate(2px, 2px); font-weight: 900; }
+.tab:focus-visible { box-shadow: 3px 3px 0 var(--ink), 0 0 0 6px var(--lemon); }
+.tab[aria-selected='true']:focus-visible { box-shadow: 1px 1px 0 var(--ink), 0 0 0 6px var(--lemon); }
+@media (min-width: 520px) { .tab { font-size: var(--fs-m); } }
+
+.tabpanel:focus { outline: none; }
+.panel { display: flex; flex-direction: column; gap: var(--sp-4); }
+.panel__title { font-size: var(--fs-xl); }
+
+/* Buehne und Sprechblase */
+.stage--big { padding: var(--sp-5) var(--sp-4) var(--sp-3); }
+.stage--big .monster-svg { width: min(280px, 78%); }
+.stage--small { padding: var(--sp-3); }
+.stage--small .monster-svg { width: min(170px, 62%); }
+.coach { display: flex; align-items: center; gap: var(--sp-3); }
+.coach__monster { flex: none; width: 92px; }
+.coach__bubble { flex: 1; min-width: 0; padding: var(--sp-3) var(--sp-4); }
+.coach__bubble::before { top: 50%; left: -13px; margin-top: -11px; transform: rotate(-45deg); }
+.monstertab__bubble::before { left: 50%; margin-left: -11px; }
+
+/* Monster-Tab */
+.monstertab { display: flex; flex-direction: column; gap: var(--sp-5); }
+.monstertab__hero { display: flex; flex-direction: column; gap: var(--sp-4); }
+.growth { display: flex; flex-direction: column; gap: var(--sp-2); }
+.growth__stage { font-size: var(--fs-2xl); }
+.meter { height: 24px; background: var(--paper); border: var(--line) solid var(--ink); border-radius: var(--r-pill); overflow: hidden; }
+.meter__fill { height: 100%; min-width: 6px; background: var(--algae); border-right: var(--line) solid var(--ink); border-radius: var(--r-pill); }
+.growth__text { font-weight: 700; }
+.streakline {
+  display: flex; flex-direction: column; gap: 2px; align-items: flex-start;
+  background: var(--lemon); border: var(--line) solid var(--ink); border-radius: var(--r-card); box-shadow: var(--shadow);
+  padding: var(--sp-3) var(--sp-4);
+}
+.streakline__big { font-family: var(--font-display); font-weight: 900; font-size: var(--fs-xl); }
+.feeds, .shopgrid, .wardrobe__list { display: flex; flex-direction: column; gap: var(--sp-3); }
+.price { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-display); font-weight: 900; }
+.price .coin-icon { width: 1.1em; height: 1.1em; }
+
+/* Zeilenkarten: Futter, Shop, Schrank, Hoehle, Karten */
+.feed, .shopcard, .wardrobe__item, .tcard {
+  display: flex; align-items: stretch;
+  background: var(--paper); border: var(--line) solid var(--ink); border-radius: var(--r-card); box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.feed__art, .shopcard__art, .wardrobe__art, .tcard__art {
+  flex: none; width: 88px; display: grid; place-items: center; padding: var(--sp-2);
+  background: #F6F0FF; border-right: var(--line) solid var(--ink);
+}
+.feed__body, .shopcard__body, .wardrobe__body, .tcard__body {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: var(--sp-1); padding: var(--sp-3);
+}
+.feed { align-items: center; }
+.feed__art { width: 64px; align-self: stretch; }
+.feed__body { padding: var(--sp-2) var(--sp-3); }
+.feed .btn { margin-right: var(--sp-3); min-width: 96px; min-height: 48px; padding: 0 var(--sp-3); flex: none; }
+.feed__name, .shopcard__name, .wardrobe__name, .tcard__name { font-family: var(--font-display); font-weight: 900; font-size: var(--fs-m); line-height: 1.15; overflow-wrap: anywhere; }
+.feed__meta, .shopcard__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-1) var(--sp-3); font-size: var(--fs-s); }
+.shopcard__body .btn, .wardrobe__body .btn { width: 100%; min-height: 48px; padding: 0 var(--sp-3); font-size: var(--fs-m); }
+.shopcard__state { font-family: var(--font-display); font-weight: 900; min-height: 48px; display: flex; align-items: center; gap: var(--sp-2); }
+.shopcard--owned, .wardrobe__item--on { background: #E4F8EE; }
+.wardrobe__pos { font-family: var(--font-text); font-weight: 400; font-size: var(--fs-s); }
+.wardrobe__actions { display: flex; gap: var(--sp-2); }
+.wardrobe__actions .btn { flex: 1 1 auto; }
+.wardrobe__actions .btn:nth-child(n+2) { flex: 0 0 52px; padding: 0; }
+@media (min-width: 720px) {
+  .shopgrid { display: grid; grid-template-columns: 1fr 1fr; }
+}
+
+/* Shop-Kategorien */
+.cats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-2); }
+.cat {
+  min-height: 48px; padding: 0 var(--sp-1);
+  background: var(--paper); color: var(--ink);
+  border: var(--line) solid var(--ink); border-radius: var(--r-pill); box-shadow: 3px 3px 0 var(--ink);
+  font-family: var(--font-display); font-weight: 700; font-size: 0.875rem; cursor: pointer;
+}
+.cat[aria-pressed='true'] { background: var(--pumpkin); font-weight: 900; box-shadow: 1px 1px 0 var(--ink); transform: translate(2px, 2px); }
+.cat:focus-visible { box-shadow: 3px 3px 0 var(--ink), 0 0 0 6px var(--lemon); }
+
+/* Schrank: der Spiegel bleibt beim Scrollen sichtbar, damit man das Anziehen sieht */
+.wardrobe { display: flex; flex-direction: column; gap: var(--sp-4); }
+.wardrobe__mirror {
+  position: sticky; top: 68px; z-index: 3;
+  display: flex; align-items: center; gap: var(--sp-3);
+  background: var(--bg); margin: 0 -8px; padding: var(--sp-2) 8px;
+}
+.wardrobe__mirror .stage { flex: none; width: 112px; padding: var(--sp-1); }
+.wardrobe__mirror .monster-svg { width: 100%; }
+.wardrobe__line { margin: 0; font-size: var(--fs-s); }
+.wardrobe__lists { display: flex; flex-direction: column; gap: var(--sp-5); }
+.wardrobe__group { display: flex; flex-direction: column; gap: var(--sp-3); }
+.wardrobe__slot { font-size: var(--fs-l); }
+.wardrobe__empty { font-size: var(--fs-s); }
+.swatches { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
+.swatch { gap: var(--sp-2); padding: 0 var(--sp-4) 0 var(--sp-2); min-height: 48px; font-size: var(--fs-m); }
+.swatch__dot { width: 28px; height: 28px; border-radius: 50%; border: var(--line) solid var(--ink); flex: none; }
+.swatch[aria-pressed='true'] { background: var(--lemon); box-shadow: var(--shadow-pressed); transform: translate(2px, 2px); }
+@media (min-width: 760px) {
+  .wardrobe { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: var(--sp-5); align-items: start; }
+  .wardrobe__mirror { top: 80px; flex-direction: column; align-items: stretch; margin: 0; padding: 0; background: none; }
+  .wardrobe__mirror .stage { width: auto; padding: var(--sp-3); }
+  .wardrobe__mirror .monster-svg { width: min(170px, 62%); }
+  .wardrobe__line { font-size: var(--fs-m); font-weight: 700; }
+}
+
+/* Hoehle */
+.cavetab { display: flex; flex-direction: column; gap: var(--sp-3); }
+.cave { border: var(--line) solid var(--ink); border-radius: var(--r-page); box-shadow: var(--shadow); overflow: hidden; background: #F0E2BE; line-height: 0; }
+.cave-svg { display: block; width: 100%; height: auto; }
+.cave__count { font-weight: 700; }
+.cave__hint { margin: 0; }
+.cave-item { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; outline: none; }
+.cave-item:active { cursor: grabbing; }
+.cave-item:focus-visible .cave-hit { fill: rgba(255, 212, 59, 0.4); stroke: var(--ink); stroke-width: 3; stroke-dasharray: 8 5; }
+.cave-item:focus-visible { box-shadow: none; }
+
+/* Sammelkarten */
+.album { display: flex; flex-direction: column; gap: var(--sp-3); }
+.album__count { font-family: var(--font-display); font-weight: 900; font-size: var(--fs-l); }
+.album__how { max-width: 52ch; }
+.album__grid { display: grid; grid-template-columns: 1fr; gap: var(--sp-3); }
+@media (min-width: 720px) { .album__grid { grid-template-columns: 1fr 1fr; } }
+.tcard__art { width: 84px; }
+.tcard--normal { background: #FFFFFF; }
+.tcard--selten { background: #EAF7FF; }
+.tcard--legendaer { background: #FFF6D1; }
+.tcard--missing { background: #E6DDF5; }
+.tcard--missing .tcard__art { background: var(--ink); }
+.tcard__q { font-family: var(--font-display); font-weight: 900; font-size: 3rem; color: var(--lemon); line-height: 1; }
+.tcard__rarity { font-size: var(--fs-s); }
+.tcard__badge { display: inline-block; font-family: var(--font-display); font-weight: 900; padding: 1px var(--sp-3); border: 2px solid var(--ink); border-radius: var(--r-pill); background: var(--paper); }
+.tcard--selten .tcard__badge { background: #BFE9FF; }
+.tcard--legendaer .tcard__badge { background: var(--lemon); }
+.tcard__text { font-size: var(--fs-s); line-height: 1.4; }
+
+/* Glueckwunsch-Meldung */
+.overlay {
+  position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: var(--sp-4);
+  background: rgba(43, 27, 61, 0.7);
+}
+.overlay__card {
+  position: relative; width: min(100%, 420px); max-height: 100%; overflow: auto;
+  display: flex; flex-direction: column; align-items: center; gap: var(--sp-3); text-align: center;
+  background: var(--paper); border: var(--line) solid var(--ink); border-radius: var(--r-page); box-shadow: var(--shadow);
+  padding: var(--sp-5) var(--sp-4);
+  animation: overlay-pop 320ms cubic-bezier(.2, 1.4, .4, 1) both;
+}
+.overlay__monster { width: min(220px, 70%); }
+.overlay__title { font-size: var(--fs-xl); }
+.overlay__stage { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-l); }
+.spark {
+  position: absolute; width: 20px; height: 20px; background: var(--lemon); border: 2.5px solid var(--ink);
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  top: calc(18% + (var(--i) % 4) * 14%); left: calc(6% + (var(--i) * 12%));
+  animation: spark 1400ms ease-in-out infinite; animation-delay: calc(var(--i) * 120ms);
+}
+@keyframes overlay-pop { from { transform: scale(0.6); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes spark { 0%, 100% { transform: scale(0.6) rotate(0); opacity: 0.6; } 50% { transform: scale(1.3) rotate(25deg); opacity: 1; } }
+
+@media (min-width: 900px) {
+  .monstertab { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: var(--sp-5) var(--sp-6); align-items: start; }
+  .monstertab__hero { grid-row: span 3; position: sticky; top: 80px; }
+}

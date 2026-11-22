@@ -5,7 +5,7 @@ import { startRouter, registerScreen, go } from './ui/router.js';
 import { renderProfile } from './ui/screens/profile.js';
 import { renderHub } from './ui/screens/hub.js';
 import { renderWorld } from './ui/screens/world.js';
-import { placeholder } from './ui/screens/placeholder.js';
+import { renderMonster } from './ui/screens/monster.js';
 
 const LAST_KEY = 'bruchmonster:last';
 
@@ -90,7 +90,7 @@ registerScreen('profile', (root, params, a) => {
 });
 registerScreen('hub', renderHub);
 registerScreen('world', renderWorld);
-registerScreen('monster', placeholder('Monster'));
+registerScreen('monster', renderMonster);
 
 const profiles = store.listProfiles();
 const last = readLast();
