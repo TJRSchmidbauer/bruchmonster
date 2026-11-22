@@ -29,7 +29,7 @@ export function renderProfile(root, _params, app) {
     const p = store.load(id);
     if (!p) {
       message = 'Dieser Spielstand lässt sich nicht lesen.';
-      draw();
+      draw('#meldung');
       return;
     }
     app.openProfile(p);
@@ -38,7 +38,7 @@ export function renderProfile(root, _params, app) {
   function say(text) {
     message = text;
     announce(text);
-    draw();
+    draw('#meldung');
   }
 
   function create(ev) {
@@ -58,6 +58,7 @@ export function renderProfile(root, _params, app) {
       if (!res.ok) return say(IMPORT_FEHLER[res.reason] ?? IMPORT_FEHLER.beschaedigt);
       const saved = store.save(res.profile);
       if (!saved.ok) app.toast('Speichern hat nicht geklappt. Exportiere den Spielstand, damit nichts verloren geht.');
+      app.toast(`Spielstand von ${res.profile.name} ist da.`);
       app.openProfile(res.profile);
     };
     reader.onerror = () => say(IMPORT_FEHLER.beschaedigt);
@@ -75,21 +76,21 @@ export function renderProfile(root, _params, app) {
           h('span', { class: 'sr-only' }, ' Münzen'))),
       asking
         ? h('div', { class: 'profile-row__actions', role: 'group', 'aria-label': `${entry.name} löschen?` },
-            h('p', { class: 'profile-row__ask' }, `${entry.name} wirklich löschen? Das geht nicht rückgängig.`),
+            h('p', { class: 'profile-row__ask', id: 'rueckfrage' }, `${entry.name} wirklich löschen? Das geht nicht rückgängig.`),
             button('Ja, löschen', { variant: 'danger', onClick: () => {
               store.remove(entry.id);
               app.forget(entry.id);
               confirming = null;
               say(`${entry.name} ist gelöscht.`);
             } }),
-            button('Doch nicht', { variant: 'ghost', onClick: () => { confirming = null; draw(); } }))
+            button('Doch nicht', { variant: 'ghost', 'data-act': 'cancel', 'aria-describedby': 'rueckfrage', onClick: () => { confirming = null; draw(`[data-del="${entry.id}"]`); } }))
         : h('div', { class: 'profile-row__actions' },
             button('Spielen', { variant: 'primary', onClick: () => open(entry.id), 'aria-label': `${entry.name} spielen` }),
             button('Exportieren', { variant: 'ghost', onClick: () => p && download(p), 'aria-label': `${entry.name} exportieren` }),
-            button('Löschen', { variant: 'ghost', onClick: () => { confirming = entry.id; draw(); }, 'aria-label': `${entry.name} löschen` })));
+            button('Löschen', { variant: 'ghost', 'data-del': entry.id, onClick: () => { confirming = entry.id; draw('[data-act="cancel"]'); }, 'aria-label': `${entry.name} löschen` })));
   }
 
-  function draw() {
+  function draw(focusSel) {
     const list = store.listProfiles();
     root.replaceChildren(
       h('div', { class: 'screen screen--profile' },
@@ -99,12 +100,13 @@ export function renderProfile(root, _params, app) {
           : 'Gib dir einen Namen, dann bekommst du dein eigenes Monster. Es hat immer Hunger.'),
         store.persistent ? null : h('p', { class: 'notice', role: 'note' },
           'Dein Browser speichert gerade nichts dauerhaft. Exportiere deinen Spielstand, bevor du das Fenster schließt.'),
-        message ? h('p', { class: 'notice notice--error', role: 'alert' }, message) : null,
+        message ? h('p', { id: 'meldung', tabindex: -1, class: 'notice notice--error', role: 'alert' }, message) : null,
         list.length ? h('ul', { class: 'profile-list' }, list.map(row)) : null,
         h('form', { class: 'card create', onsubmit: create },
           h('h2', { class: 'card__title' }, 'Neues Monster'),
           h('label', { for: 'neuer-name', class: 'field__label' }, 'Dein Name'),
-          h('input', { id: 'neuer-name', class: 'field', type: 'text', maxlength: 20, autocomplete: 'off', placeholder: 'Zum Beispiel Mia' }),
+          h('input', { id: 'neuer-name', class: 'field field--hint', type: 'text', maxlength: 20, autocomplete: 'off', placeholder: 'Zum Beispiel Mia', 'aria-describedby': 'name-hinweis' }),
+          h('p', { id: 'name-hinweis', class: 'small field__hint' }, 'Ohne Namen heißt du Monsterfreund.'),
           h('button', { type: 'submit', class: 'btn btn--primary' }, h('span', null, 'Los geht’s'))),
         h('div', { class: 'card import' },
           h('h2', { class: 'card__title' }, 'Spielstand mitbringen'),
@@ -113,6 +115,7 @@ export function renderProfile(root, _params, app) {
           button('Datei auswählen', { variant: 'secondary', onClick: () => root.querySelector('#import-datei').click() }))));
     const h1 = root.querySelector('h1');
     h1.setAttribute('tabindex', '-1');
+    if (focusSel) (root.querySelector(focusSel) ?? h1).focus();
   }
 
   draw();

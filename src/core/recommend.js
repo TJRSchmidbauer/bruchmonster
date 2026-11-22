@@ -28,6 +28,7 @@ export function recommend(p, nowMs = Date.now()) {
     return {
       world: worst.world,
       kind: worst.kind,
+      why: 'fehler',
       reason: `Fehlerquote ${Math.round(worstRate * 100)} % bei ${attempts(worst.m)} Versuchen`,
     };
   }
@@ -38,5 +39,5 @@ export function recommend(p, nowMs = Date.now()) {
   if (oldest.m.last === 0) reason = 'noch nie geübt';
   else if (days === 0) reason = 'heute schon geübt, aber am längsten her';
   else reason = `zuletzt vor ${days} Tagen geübt`;
-  return { world: oldest.world, kind: oldest.kind, reason };
+  return { world: oldest.world, kind: oldest.kind, why: oldest.m.last === 0 ? 'neu' : 'lange-her', reason };
 }

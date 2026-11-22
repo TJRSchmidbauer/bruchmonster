@@ -3,7 +3,7 @@ import { h, button } from '../dom.js';
 import { go } from '../router.js';
 import { recommend } from '../../core/recommend.js';
 import { KINDS } from '../../tasks/generators.js';
-import { WORLDS, worldByKey, motif } from '../worlds.js';
+import { WORLDS, worldByKey, motif, KIND_LABELS, WHY_TEXT } from '../worlds.js';
 import { monsterPreview } from '../monster/preview.js';
 
 // Ein Stern pro Aufgabenart mit mindestens 5 richtigen Antworten.
@@ -31,8 +31,9 @@ export function renderHub(root, _params, app) {
         h('span', { class: 'tile__body' },
           h('span', { class: 'tile__name' }, w.name),
           h('span', { class: 'tile__blurb' }, w.blurb),
-          h('span', { class: 'tile__stars', 'aria-label': `${s.got} von ${s.total} Sternen` },
-            h('span', { 'aria-hidden': 'true' }, '★'.repeat(s.got) + '☆'.repeat(s.total - s.got))))));
+          h('span', { class: 'tile__stars' },
+            Array.from({ length: s.total }, (_, i) => star(i < s.got)),
+            h('span', { class: 'sr-only' }, `${s.got} von ${s.total} Sternen`)))));
   });
 
   root.append(
@@ -41,8 +42,8 @@ export function renderHub(root, _params, app) {
       h('section', { class: 'hub__monster', 'aria-label': 'Dein Monster' },
         h('div', { class: 'stage' }, monsterPreview(p)),
         h('div', { class: 'bubble' },
-          h('p', { class: 'bubble__text' }, `Mein Magen knurrt nach: ${recWorld.name}.`),
-          h('p', { class: 'bubble__reason' }, rec.reason),
+          h('p', { class: 'bubble__text' }, `Heute hab ich Hunger auf: ${KIND_LABELS[rec.kind] ?? rec.kind} im ${recWorld.name}.`),
+          h('p', { class: 'bubble__reason' }, WHY_TEXT[rec.why] ?? ''),
           button('Los geht’s', { variant: 'primary', onClick: () => go('world', { world: rec.world, kind: rec.kind }) }))),
       h('section', { class: 'hub__worlds', 'aria-label': 'Welten' },
         h('h2', { class: 'section-title' }, 'Wohin heute?'),

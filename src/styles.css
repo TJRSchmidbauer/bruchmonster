@@ -116,7 +116,7 @@ h1:focus { outline: none; box-shadow: none; }
 .btn:active { transform: translate(2px, 2px); box-shadow: var(--shadow-pressed); }
 .btn--primary { background: var(--pumpkin); font-weight: 900; font-size: var(--fs-l); }
 .btn--secondary { background: var(--paper); }
-.btn--danger { background: var(--bramble); color: var(--ink); }
+.btn--danger { background: #B02A5B; color: var(--paper); }
 .btn--ghost { background: transparent; box-shadow: none; border-color: transparent; text-decoration: underline; text-underline-offset: 3px; }
 .btn--ghost:active { transform: none; background: rgba(43, 27, 61, 0.08); }
 .btn--ghost:hover { background: rgba(43, 27, 61, 0.06); }
@@ -144,6 +144,8 @@ h1:focus { outline: none; box-shadow: none; }
   font-size: var(--fs-l);
   margin-bottom: var(--sp-4);
 }
+.field--hint { margin-bottom: var(--sp-2); }
+.field__hint { margin-bottom: var(--sp-4); }
 .field::placeholder { color: #6B5B7B; }
 
 .notice {
@@ -194,6 +196,10 @@ h1:focus { outline: none; box-shadow: none; }
   font-weight: 700;
   z-index: 10;
 }
+
+/* Fokus: Ring bleibt trotz harter Schatten sichtbar */
+.btn:focus-visible, .tile:focus-visible { box-shadow: var(--shadow), 0 0 0 6px var(--lemon); }
+.btn--ghost:focus-visible { box-shadow: 0 0 0 6px var(--lemon); }
 
 /* 4 Bruchbauteil ---------------------------------------------------------- */
 .frac {

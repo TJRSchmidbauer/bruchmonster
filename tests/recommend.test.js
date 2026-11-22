@@ -58,3 +58,11 @@ test('recommend: Eingabe wird nicht veraendert', () => {
   recommend(p, NOW);
   assert.deepEqual(p, snap);
 });
+
+test('recommend: why nennt den Zweig (fehler, neu, lange-her)', () => {
+  const f = recommend(profile({ mastery: { kuerzen: { right: 1, wrong: 4, last: NOW - DAY } } }), NOW);
+  assert.equal(f.why, 'fehler');
+  assert.equal(recommend(profile(), NOW).why, 'neu');
+  const mastery = Object.fromEntries(allKinds.map((k) => [k, { right: 5, wrong: 0, last: NOW - 3 * DAY }]));
+  assert.equal(recommend(profile({ mastery }), NOW).why, 'lange-her');
+});

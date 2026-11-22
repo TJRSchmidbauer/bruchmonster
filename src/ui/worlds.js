@@ -8,6 +8,30 @@ export const WORLDS = [
   { key: 'detektiv', name: 'Fehler-Detektiv', color: '#7B5CFF', blurb: 'Finde den Fehler, bevor er das Monster verwirrt.' },
 ];
 
+export const KIND_LABELS = {
+  platzieren: 'Brüche platzieren',
+  schaetzen: 'Brüche schätzen',
+  vergleichen: 'Brüche vergleichen',
+  dazwischen: 'Brüche dazwischen finden',
+  darstellen: 'Brüche darstellen',
+  erweitern: 'Brüche erweitern',
+  kuerzen: 'Brüche kürzen',
+  addieren: 'Brüche addieren',
+  subtrahieren: 'Brüche subtrahieren',
+  'bruchteil-vom-bruchteil': 'Bruchteil vom Bruchteil',
+  'anteil-von-groesse': 'Anteile von Größen',
+  rezept: 'Rezepte umrechnen',
+  'teilen-durch-nat': 'Brüche teilen',
+  'fehler-finden': 'Fehler finden',
+  'regel-entdecken': 'Regeln entdecken',
+};
+
+export const WHY_TEXT = {
+  fehler: 'Das hat zuletzt noch gehakt.',
+  neu: 'Das hast du noch nie probiert.',
+  'lange-her': 'Das ist schon eine Weile her.',
+};
+
 export const worldByKey = (key) => WORLDS.find((w) => w.key === key);
 
 const INK = '#2B1B3D';
