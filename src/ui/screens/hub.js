@@ -6,6 +6,7 @@ import { KINDS } from '../../tasks/generators.js';
 import { WORLDS, worldByKey, motif, KIND_LABELS, WHY_TEXT } from '../worlds.js';
 import { monsterPreview } from '../monster/preview.js';
 import { backupButtons, backupHint } from '../backup.js';
+import { legalFooter } from '../legal.js';
 
 // Ein Stern pro Aufgabenart mit mindestens 5 richtigen Antworten.
 function stars(profile, key) {
@@ -51,5 +52,6 @@ export function renderHub(root, _params, app) {
         h('h2', { class: 'section-title' }, 'Wohin heute?'),
         h('ul', { class: 'tiles' }, tiles),
         button('Zum Monster', { variant: 'secondary', onClick: () => go('monster') }),
-        ...backupButtons(app))));
+        ...backupButtons(app)),
+      legalFooter('hub')));
 }

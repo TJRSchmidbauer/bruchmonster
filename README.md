@@ -30,7 +30,7 @@ Stoff: Bruchbegriff, Darstellen, Vergleichen, Erweitern und Kürzen, Addieren un
 1. Die Seite oben öffnen oder `dist/bruchmonster.html` herunterladen und im Browser öffnen. Getestet ist die App mit Chrome; andere aktuelle Browser sollten funktionieren, sind aber nicht geprüft. Maus, Touch und Tastatur sind vorgesehen.
 2. Namen eingeben, Monster bekommen, Welt wählen.
 
-**Datenschutz:** Das Spiel selbst sendet nichts. Beim Aufruf über GitHub Pages sieht allerdings GitHub, wie bei jeder Webseite, die Zugriffe (siehe [Datenschutz auf schmidbauer.io](https://schmidbauer.io/datenschutz/)). Wer das vermeiden will, nimmt die heruntergeladene Datei, die auch ohne Internet läuft. Der Spielstand bleibt in beiden Fällen nur im eigenen Browser.
+**Datenschutz:** Das Spiel selbst sendet nichts. Beim Aufruf über GitHub Pages sieht allerdings GitHub, wie bei jeder Webseite, die Zugriffe (siehe [Datenschutz auf schmidbauer.io](https://schmidbauer.io/datenschutz/)). Wer das vermeiden will, nimmt die heruntergeladene Datei, die auch ohne Internet läuft. Der Spielstand bleibt in beiden Fällen nur im eigenen Browser. In der App selbst stehen im Fuß der Startseite und des Hubs **Impressum** und **Datenschutz**; die Datenschutzerklärung verweist auf die [allgemeine Datenschutzerklärung von GitHub](https://docs.github.com/de/site-policy/privacy-policies/github-general-privacy-statement), weil die Seite über GitHub Pages ausgeliefert wird.
 
 **Wichtig:** Zum Spielen die Datei herunterladen und im normalen Browser-Fenster öffnen. In Vorschau-Fenstern (etwa in Chat-Programmen oder E-Mail-Vorschauen) kann der Browser das Speichern sperren, dann ist der Spielstand beim Schließen weg.
 

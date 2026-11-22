@@ -3,6 +3,7 @@ import { h, button, announce } from '../dom.js';
 import { importProfile, importProfileFromCode } from '../../core/storage.js';
 import { backupLabel } from '../../core/backup.js';
 import { saveAsFile, copyCode } from '../backup.js';
+import { legalFooter } from '../legal.js';
 import { monsterColor } from '../monster/preview.js';
 
 const IMPORT_FEHLER = {
@@ -162,12 +163,7 @@ export function renderProfile(root, _params, app) {
           h('label', { for: 'import-code', class: 'field__label' }, 'Oder füge deinen Spielstand-Code ein'),
           h('textarea', { id: 'import-code', class: 'field codebox__text', rows: 3, spellcheck: 'false', autocomplete: 'off', autocapitalize: 'off', placeholder: 'BM2-…' }, codeDraft),
           button('Code laden', { variant: 'secondary', 'data-act': 'load-code', onClick: onCode })),
-        h('footer', { class: 'legal small' },
-          h('p', null, '© 2026 Tobias Schmidbauer · ',
-            h('a', { href: 'https://creativecommons.org/licenses/by-nc/4.0/deed.de', target: '_blank', rel: 'noopener noreferrer' }, 'CC BY-NC 4.0'),
-            ' · ',
-            h('a', { href: 'https://schmidbauer.io', target: '_blank', rel: 'noopener noreferrer' }, 'schmidbauer.io')),
-          h('p', null, 'Mit KI-Unterstützung entwickelt. Die App selbst sendet nichts ins Netz.'))));
+        legalFooter('profile')));
     const h1 = root.querySelector('h1');
     h1.setAttribute('tabindex', '-1');
     if (focusSel) (root.querySelector(focusSel) ?? h1).focus();

@@ -560,3 +560,12 @@ textarea.field.codebox__text {
 .backup-hint p { margin: var(--sp-2) 0 var(--sp-3); }
 .backup-hint__actions { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); }
 .backup-hint__actions .btn { flex: 1 1 10rem; }
+
+/* Impressum und Datenschutz */
+.legal__links { display: flex; justify-content: center; gap: var(--sp-2); flex-wrap: wrap; }
+.legal__links .btn--ghost { text-decoration: underline; min-height: 44px; padding: 0 var(--sp-2); }
+.screen--recht .card + .legal__switch, .legal__switch { margin-top: var(--sp-4); }
+.screen--recht .world__title { background: var(--surface, #fff); }
+.legal-text h3 { font-size: var(--fs-md, 1.1rem); margin: var(--sp-4) 0 var(--sp-1); }
+.legal-text p { max-width: 65ch; }
+.legal-text a, .screen--recht a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }

@@ -28,6 +28,7 @@ test('gebaute Datei fragt nichts im Netz an', async () => {
     // Nur anklickbare Verweise im Fuss der Startseite (Namensnennung); nichts wird automatisch geladen.
     'https://creativecommons.org/licenses/by-nc/4.0/deed.de',
     'https://schmidbauer.io',
+    'https://docs.github.com/de/site-policy/privacy-policies/github-general-privacy-statement',
   ]);
   const urls = html.match(/https?:\/\/[^\s"'<>)\\]+/g) ?? [];
   const bad = urls.filter((u) => !allowed.has(u));

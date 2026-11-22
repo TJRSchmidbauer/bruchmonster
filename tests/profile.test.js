@@ -59,3 +59,16 @@ test('Startseite nennt Urheber und Lizenz (CC BY-NC 4.0)', () => {
   assert.ok(text.includes('CC BY-NC 4.0'), 'Lizenz');
   assert.ok(text.includes('schmidbauer.io'), 'Homepage');
 });
+
+test('Fuss führt zu Impressum und Datenschutz, Datenschutz verweist auf GitHub', async () => {
+  const { renderRecht } = await import('../src/ui/screens/recht.js');
+  const root = document.createElement('div');
+  renderRecht(root, { back: 'profile', part: 'datenschutz' });
+  const t = root.textContent;
+  assert.ok(t.includes('GitHub Pages'), 'GitHub Pages genannt');
+  const a = [...root.querySelectorAll('a')].map((x) => x.getAttribute('href'));
+  assert.ok(a.includes('https://docs.github.com/de/site-policy/privacy-policies/github-general-privacy-statement'), 'GitHub-Datenschutz verlinkt');
+  const r2 = document.createElement('div');
+  renderRecht(r2, { part: 'impressum' });
+  assert.ok(r2.textContent.includes('Wenzenbach') && r2.textContent.includes('§ 18'), 'Impressum');
+});
